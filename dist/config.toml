@@ -1,0 +1,22 @@
+[network]
+port = 47100
+interfaces = []                 # empty = auto (private LAN interfaces only)
+max_peers = 8
+
+[notifications]
+enabled = true
+sink = "dbus"                   # "dbus" | "journal" | "none"
+plain_text_only = true
+hide_body_when_locked = true
+rate_limit = { count = 10, per_seconds = 10 }
+forward_laptop_to_phone = false # optional DBus monitor feature
+
+[battery]
+device = "auto"                 # or "BAT0"
+poll_seconds = 60
+
+[commands]                      # allow-list. Names are what the phone may request.
+lock-screen = { argv = ["loginctl", "lock-session"] }
+suspend     = { argv = ["systemctl", "suspend"], require_confirm = true }
+volume-up   = { argv = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"] }
+play-pause  = { argv = ["playerctl", "play-pause"] }

@@ -1,0 +1,13 @@
+[package]
+name = "lok-proto"
+version = "0.1.0"
+edition = "2021"
+description = "Wire types, framing, and message definitions for LokSync"
+
+[dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+postcard = { version = "1.0", features = ["use-std"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+serde_json = "1.0"

@@ -1,0 +1,26 @@
+[package]
+name = "lok-sync-d"
+version = "0.1.0"
+edition = "2021"
+description = "LokSync headless core daemon"
+
+[dependencies]
+lok-proto = { path = "../lok-proto" }
+lok-crypto = { path = "../lok-crypto" }
+tokio = { version = "1", default-features = false, features = ["rt", "net", "time", "sync", "macros", "io-util", "signal", "fs", "process"] }
+zbus = { version = "4", default-features = false, features = ["tokio"] }
+mdns-sd = "0.11"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+sd-notify = "0.4"
+rustix = { version = "0.38", features = ["net", "fs"] }
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+rand = "0.8"
+hex = "0.4"
+futures-util = "0.3"
+libc = "0.2"
+postcard = { version = "1.0", features = ["use-std"] }

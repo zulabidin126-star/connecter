@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "crates/lok-proto",
+    "crates/lok-crypto",
+    "crates/lok-sync-d",
+    "crates/lok-sync-gui",
+]
+resolver = "2"
+
+[profile.release]
+opt-level     = "s"
+lto           = "fat"
+codegen-units = 1
+panic         = "abort"
+strip         = true
+debug         = false

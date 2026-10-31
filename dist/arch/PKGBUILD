@@ -1,0 +1,46 @@
+# Maintainer: LokSync Contributors <dev@loksync.local>
+pkgname=lok-sync
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Ultra-lightweight local phone <-> Linux sync daemon (notifications, battery, commands)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/loksync/loksync"
+license=('MIT')
+depends=('systemd')
+optdepends=('mako: notification daemon for Wayland'
+            'dunst: notification daemon'
+            'swaync: notification center for Sway/Hyprland'
+            'waybar: battery module in the status bar')
+makedepends=('cargo')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+options=('!lto')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR=target
+  cargo build --frozen --release -p lok-sync-d -p lok-sync-gui
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo test --frozen --workspace
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/lok-sync-d   "$pkgdir/usr/bin/lok-sync-d"
+  install -Dm755 target/release/lok-sync-gui "$pkgdir/usr/bin/lok-sync-gui"
+  install -Dm644 dist/systemd/lok-sync.service     "$pkgdir/usr/lib/systemd/user/lok-sync.service"
+  install -Dm644 dist/systemd/lok-sync.slice       "$pkgdir/usr/lib/systemd/user/lok-sync.slice"
+  install -Dm644 dist/systemd/lok-sync-gui.service "$pkgdir/usr/lib/systemd/user/lok-sync-gui.service"
+  install -Dm644 dist/config.toml "$pkgdir/etc/lok-sync/config.toml"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

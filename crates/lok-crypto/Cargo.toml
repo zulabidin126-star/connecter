@@ -1,0 +1,20 @@
+[package]
+name = "lok-crypto"
+version = "0.1.0"
+edition = "2021"
+description = "Cryptographic operations, pairing, and session key exchange for LokSync"
+
+[dependencies]
+lok-proto = { path = "../lok-proto" }
+aes-gcm = "0.10"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+hkdf = "0.12"
+sha2 = "0.10"
+spake2 = "0.4"
+rand = "0.8"
+zeroize = { version = "1", features = ["derive"] }
+thiserror = "1.0"
+hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+postcard = { version = "1.0", features = ["use-std"] }

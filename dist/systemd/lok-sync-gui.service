@@ -1,0 +1,17 @@
+[Unit]
+Description=LokSync tray
+After=lok-sync.service graphical-session.target
+PartOf=graphical-session.target
+Requires=lok-sync.service
+
+[Service]
+ExecStart=/usr/bin/lok-sync-gui --tray
+Slice=lok-sync.slice
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+PrivateTmp=yes
+
+[Install]
+WantedBy=graphical-session.target

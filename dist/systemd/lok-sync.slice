@@ -1,0 +1,8 @@
+[Unit]
+Description=LokSync resource slice (daemon + GUI combined)
+
+[Slice]
+MemoryHigh=22M
+MemoryMax=25M
+MemorySwapMax=0
+TasksMax=48
