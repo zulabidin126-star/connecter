@@ -1,4 +1,7 @@
+mod gui_app;
+mod gui_state;
 mod ipc_client;
+mod ipc_worker;
 mod pair;
 mod status;
 mod tray;
@@ -12,8 +15,11 @@ use lok_proto::ipc::{IpcRequest, IpcResponse};
 #[command(name = "lok-sync-gui")]
 #[command(author = "LokSync Contributors")]
 #[command(version = env!("CARGO_PKG_VERSION"))]
-#[command(about = "LokSync lightweight GUI & CLI client for Waybar, tray, and device pairing", long_about = None)]
+#[command(about = "LokSync modern GUI & CLI client for desktop dashboard, Waybar, tray, and pairing", long_about = None)]
 struct Cli {
+    #[arg(long, help = "Launch graphical desktop dashboard")]
+    gui: bool,
+
     #[arg(long, help = "Output continuous JSON lines for Waybar custom module")]
     waybar: bool,
 
@@ -30,43 +36,77 @@ struct Cli {
     unpair: Option<String>,
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if cli.waybar {
-        waybar::run_waybar().await;
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(waybar::run_waybar());
         return Ok(());
     }
 
     if cli.tray {
-        tray::run_tray().await?;
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(tray::run_tray())?;
         return Ok(());
     }
 
     if cli.pair {
-        pair::run_pairing().await?;
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(pair::run_pairing())?;
         return Ok(());
     }
 
     if let Some(peer_id) = cli.unpair {
-        let mut client = IpcClient::connect().await.map_err(|e| {
-            format!("Cannot connect to lok-sync-d: {e}")
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(async {
+            let mut client = IpcClient::connect().await.map_err(|e| {
+                format!("Cannot connect to lok-sync-d: {e}")
+            })?;
+            match client.request(&IpcRequest::Unpair { peer: peer_id.clone() }).await? {
+                IpcResponse::Ok { .. } => {
+                    println!("Successfully unpaired peer '{peer_id}'");
+                }
+                IpcResponse::Error { message, .. } => {
+                    eprintln!("Failed to unpair: {message}");
+                    std::process::exit(1);
+                }
+                _ => {}
+            }
+            Ok::<(), Box<dyn std::error::Error>>(())
         })?;
-        match client.request(&IpcRequest::Unpair { peer: peer_id.clone() }).await? {
-            IpcResponse::Ok { .. } => {
-                println!("Successfully unpaired peer '{peer_id}'");
-            }
-            IpcResponse::Error { message, .. } => {
-                eprintln!("Failed to unpair: {message}");
-                std::process::exit(1);
-            }
-            _ => {}
-        }
         return Ok(());
     }
 
-    // Default or --status
-    status::run_status().await?;
-    Ok(())
+    if cli.status {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(status::run_status())?;
+        return Ok(());
+    }
+
+    // Default: Launch the modern graphical user interface!
+    let native_options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([820.0, 580.0])
+            .with_min_inner_size([640.0, 480.0])
+            .with_title("LokSync — Local Device Bridge"),
+        ..Default::default()
+    };
+
+    eframe::run_native(
+        "LokSync",
+        native_options,
+        Box::new(|cc| Ok(Box::new(gui_app::LokSyncGuiApp::new(cc)))),
+    )
+    .map_err(|e| format!("GUI launch failed: {e}").into())
 }

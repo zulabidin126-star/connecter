@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=LokSync
+Comment=Ultra-lightweight Linux <-> Phone Bridge
+Exec=lok-sync-gui
+Icon=preferences-system-network
+Terminal=false
+Type=Application
+Categories=Utility;Network;
+Keywords=phone;sync;battery;notifications;android;kdeconnect;
+StartupNotify=true
+StartupWMClass=lok-sync-gui

@@ -21,10 +21,11 @@
             install -Dm644 dist/systemd/lok-sync.service     $out/lib/systemd/user/lok-sync.service
             install -Dm644 dist/systemd/lok-sync.slice       $out/lib/systemd/user/lok-sync.slice
             install -Dm644 dist/systemd/lok-sync-gui.service $out/lib/systemd/user/lok-sync-gui.service
+            install -Dm644 dist/desktop/lok-sync-gui.desktop $out/share/applications/lok-sync-gui.desktop
           '';
           meta = {
-            description = "Ultra-lightweight local phone <-> Linux sync daemon";
-            mainProgram = "lok-sync-d";
+            description = "Ultra-lightweight local phone <-> Linux sync daemon & GUI";
+            mainProgram = "lok-sync-gui";
             platforms = [ "x86_64-linux" "aarch64-linux" ];
           };
         };
@@ -38,7 +39,23 @@
             pkg-config
             systemd
             dbus
+            wayland
+            libxkbcommon
+            libglvnd
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXrandr
+            xorg.libXi
           ];
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
+            libglvnd
+            wayland
+            libxkbcommon
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXrandr
+            xorg.libXi
+          ]);
         };
       })) // {
       nixosModules.default = import ./dist/nix/module.nix self;
