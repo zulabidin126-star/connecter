@@ -28,6 +28,7 @@
 7. [Security Threat Model & Local Isolation](#7-security-threat-model--local-isolation)
 8. [Resource Budget & Verification](#8-resource-budget--verification)
 9. [Roadmap & Open Questions](#9-roadmap--open-questions)
+10. [Mobile (Android) Client Architecture & APK Distribution](#10-mobile-android-client-architecture--apk-distribution)
 
 ---
 
@@ -1198,6 +1199,115 @@ service so the OS does not kill the connection.
 3. **Allocator choice** (`musl` default vs `mimalloc`) — decide from the §8 benchmark.
 4. **Secret storage default** — plain `0600` file vs `systemd-creds` vs Secret Service. Suggested default: `0600` file, with `systemd-creds` documented as a hardening step.
 5. **mDNS library thread footprint** — confirm `mdns-sd` thread count and memory in the §8 test, else write a minimal responder.
+
+---
+
+## 10. Mobile (Android) Client Architecture & APK Distribution
+
+### 10.1 Monorepo Folder Isolation (`/mobile` directory)
+
+To preserve architectural cleanliness and prevent cross-language dependency pollution, the mobile client is strictly isolated into its own dedicated directory at the repository root. The Rust desktop workspace (`crates/`) and the mobile workspace (`mobile/`) do not share build tools or manifest files.
+
+```text
+connecter/
+├── Cargo.toml            # Rust workspace manifest (lok-sync-d, lok-sync-cli, lok-sync-gui, lok-proto)
+├── crates/               # Linux desktop components
+│   ├── lok-sync-d/       # Background headless daemon bridge
+│   ├── lok-sync-cli/     # Dedicated terminal CLI tool (lok-sync)
+│   ├── lok-sync-gui/     # Desktop Libadwaita dashboard
+│   ├── lok-proto/        # Core framing, Postcard messages, IPC structs
+│   └── lok-crypto/       # SPAKE2 & ChaCha20-Poly1305 / AES-GCM engine
+│
+├── mobile/               # 📱 Dedicated Mobile Client (Completely Isolated)
+│   ├── android/          # Native Android Gradle configuration & manifests
+│   │   ├── app/build.gradle
+│   │   └── src/main/AndroidManifest.xml
+│   ├── lib/              # Clean Flutter / Dart architecture
+│   │   ├── core/         # Network, mDNS, framing, cryptographic session
+│   │   ├── models/       # Peer, Battery, Notification, Media, Transfer models
+│   │   ├── services/     # Android native service bridges
+│   │   │   ├── background_service.dart   # Foreground service (low power)
+│   │   │   ├── notif_listener.dart       # NotificationListenerService hook
+│   │   │   ├── media_service.dart        # MediaSessionManager hook
+│   │   │   └── file_receiver.dart        # Direct-to-disk stream writer
+│   │   └── ui/           # Modern Libadwaita / Material You adaptive interface
+│   │       ├── screens/  # Radar discovery, transfers, clipboard, settings
+│   │       └── widgets/  # Device cards, speed meters, transfer progress
+│   └── pubspec.yaml      # Mobile app dependencies & assets
+│
+├── .github/workflows/
+│   ├── ci.yml            # Linux desktop automated test & check suite
+│   └── release-apk.yml   # Automated GitHub Release APK build & deployment
+│
+├── Makefile              # Desktop & APK build targets (`make apk`)
+├── package.nix           # NixOS package derivation
+└── architecture.md       # Complete system architecture specification
+```
+
+---
+
+### 10.2 Android Native System Integrations
+
+To match the deep desktop integration of LokSync on Linux, the Android app hooks directly into standard Android framework APIs:
+
+| Android API | Purpose | LokSync Feature |
+| :--- | :--- | :--- |
+| **`NotificationListenerService`** | Reads active & incoming notifications from Android status bar | Mirrors WhatsApp, SMS, Calls to Linux DBus with dismiss/reply actions |
+| **`MediaSessionManager`** | Listens to active media playback sessions (Spotify, YouTube, VLC) | Allows desktop media controller to pause, skip, and adjust phone playback |
+| **`BroadcastReceiver` (`ACTION_BATTERY_CHANGED`)** | Emits battery level, health, and charging source changes | Real-time phone battery status in Linux system tray and Waybar |
+| **`NsdManager` / `MulticastLock`** | ZeroConf / mDNS (`_loksync._tcp.local.`) on local Wi-Fi | Instant automatic device discovery without manual IP entry |
+| **`ForegroundService`** | Persistent foreground service with low notification priority | Guarantees Android OS battery killers (Samsung, Xiaomi, OnePlus) do not kill sync |
+| **`MediaStore` / `SAF`** | Direct file system access to `Downloads/LokSync` and Gallery | High-speed LocalSend-grade file and photo reception |
+
+---
+
+### 10.3 Automatic Wi-Fi Discovery & 1-Click Connect (Zero Codes / Zero QR)
+
+Unlike legacy pairing flows that mandate scanning QR codes or typing 6-digit PINs:
+1. **mDNS Broadcast & Listen:** When opened on Wi-Fi, both the mobile client and Linux daemon announce and resolve `_loksync._tcp.local.`.
+2. **Subnet Radar Sweep:** The mobile app displays a live Wi-Fi radar listing nearby active machines (e.g. `🖥️ nixos (192.168.100.155)`).
+3. **Mutual 1-Click Handshake:**
+   - User taps **"Connect"** on phone or laptop.
+   - An ephemeral SPAKE2 handshake initiates over direct TCP (`port 7100`).
+   - A mutual approval dialog appears: *"Pair with nixos? [Accept] [Reject]"*.
+   - Once accepted, public keys are exchanged, stored in Android EncryptedSharedPreferences, and the connection is permanently authorized.
+4. **Manual PIN / QR Fallback:** If client isolation is enforced by a public or guest Wi-Fi router, the user can toggle to the Manual tab to enter a PIN or scan an on-screen QR code.
+
+---
+
+### 10.4 Mobile Power & Zero-Drain Battery Design
+
+Mobile battery efficiency is critical. LokSync on Android adheres to the following power constraints:
+- **No Busy Polling:** The app uses asynchronous non-blocking event-driven sockets (`epoll` under the hood in the Linux/Android kernel). When idle, CPU consumption is **0.0%**.
+- **Adaptive Wi-Fi Locks:** A `WIFI_MODE_FULL_HIGH_PERF` lock is acquired **only** during active high-speed file transfers (to saturate Wi-Fi line speed) and is released immediately once the transfer finishes.
+- **Deep Sleep Compatible:** When screen is off and no file is transferring, the network connection relies on TCP keep-alive pings spaced at 15–30 seconds, allowing the mobile SoC to enter low-power C-states.
+
+---
+
+### 10.5 Direct APK Build & GitHub Releases CI/CD Pipeline
+
+To eliminate dependence on the Google Play Store and allow direct user sideloading:
+
+#### 1. Automated GitHub Actions Workflow (`.github/workflows/release-apk.yml`)
+When a new git release tag is pushed (e.g. `git push origin v0.1.0`):
+1. GitHub Actions spins up an `ubuntu-latest` runner with Flutter and Java 17.
+2. Executes `flutter build apk --release --split-per-abi` (generating optimized APKs for `arm64-v8a` and a universal `LokSync.apk`).
+3. Signs the APK with an open-source release keystore.
+4. Automatically attaches `LokSync.apk` directly to the GitHub Release page.
+
+#### 2. Local Desktop Build (`make apk`)
+Developers can build the release APK directly on their local Linux/NixOS machine with:
+```bash
+make apk
+# Output generated at: mobile/build/app/outputs/flutter-apk/app-release.apk
+```
+
+#### 3. User Installation Flow
+Users navigate to the project's GitHub Releases tab on their phone:
+1. Tap `LokSync.apk` to download.
+2. Android prompts: *"Install LokSync?"* -> Tap **Install**.
+3. Grant Wi-Fi & Notification permissions on first launch.
+4. Instant 1-click connect to their Linux desktop.
 
 ---
 
