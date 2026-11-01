@@ -13,7 +13,7 @@ forward_laptop_to_phone = false # optional DBus monitor feature
 
 [battery]
 device = "auto"                 # or "BAT0"
-poll_seconds = 60
+poll_seconds = 10
 
 [commands]                      # allow-list. Names are what the phone may request.
 lock-screen = { argv = ["loginctl", "lock-session"] }

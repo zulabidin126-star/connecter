@@ -12,7 +12,9 @@ pub async fn run_status() -> Result<(), Box<dyn std::error::Error>> {
     println!("LokSync Daemon v{}", state.daemon_version);
     println!("Device: {} (id: {})", state.device_name, state.device_id);
 
-    if let Some(bat) = state.local_battery {
+    let local_bat = crate::commands::read_host_battery_direct().or(state.local_battery);
+
+    if let Some(bat) = local_bat {
         let charge = if bat.charging { "charging" } else { "discharging" };
         println!("Local Battery: {}% ({})", bat.percent, charge);
     } else {

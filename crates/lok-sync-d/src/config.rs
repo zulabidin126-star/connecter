@@ -159,7 +159,7 @@ fn default_device() -> String {
     "auto".into()
 }
 fn default_poll_seconds() -> u64 {
-    60
+    10
 }
 
 impl Default for BatteryConfig {
