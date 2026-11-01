@@ -340,15 +340,51 @@ pub async fn manage_systemd_service(action: String) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn get_clipboard_content() -> Result<String, String> {
-    let output = Command::new("wl-paste")
-        .arg("-n")
+    // 1. Explicitly request plain text to prevent dumping binary data (like PNG images)
+    let text_output = Command::new("wl-paste")
+        .args(["-n", "--type", "text/plain;charset=utf-8"])
         .output()
-        .or_else(|_| Command::new("xclip").args(["-selection", "clipboard", "-o"]).output());
+        .or_else(|_| {
+            Command::new("wl-paste")
+                .args(["-n", "--type", "text/plain"])
+                .output()
+        })
+        .or_else(|_| {
+            Command::new("xclip")
+                .args(["-selection", "clipboard", "-t", "text/plain", "-o"])
+                .output()
+        })
+        .or_else(|_| {
+            Command::new("xclip")
+                .args(["-selection", "clipboard", "-o"])
+                .output()
+        });
 
-    match output {
-        Ok(out) if out.status.success() => Ok(String::from_utf8_lossy(&out.stdout).to_string()),
-        _ => Ok("".into()),
+    if let Ok(out) = text_output {
+        if out.status.success() {
+            if let Ok(s) = String::from_utf8(out.stdout) {
+                // Ensure text is clean printable UTF-8 with no null bytes
+                if !s.contains('\0') {
+                    return Ok(s);
+                }
+            }
+        }
     }
+
+    // 2. If plain text was not available, check if an image or file is in clipboard
+    if let Ok(types) = Command::new("wl-paste").arg("--list-types").output() {
+        if types.status.success() {
+            let t = String::from_utf8_lossy(&types.stdout);
+            if t.contains("image/png") || t.contains("image/jpeg") || t.contains("image/") {
+                return Ok("[Image in Clipboard (Screenshot / Photo)]".into());
+            }
+            if t.contains("application/pdf") {
+                return Ok("[PDF Document in Clipboard]".into());
+            }
+        }
+    }
+
+    Ok("".into())
 }
 
 #[tauri::command]

@@ -5,6 +5,7 @@ import {
   Check,
   RefreshCw,
   Smartphone,
+  Image as ImageIcon,
 } from 'lucide-react';
 import type { PeerInfo } from '../types';
 
@@ -126,13 +127,22 @@ export const ClipboardView: React.FC<ClipboardViewProps> = ({
         </div>
 
         <div
-          className={`p-4 rounded-xl border font-mono text-xs max-h-36 overflow-y-auto whitespace-pre-wrap break-all leading-relaxed ${
+          className={`p-4 rounded-xl border text-xs max-h-36 overflow-y-auto whitespace-pre-wrap break-all leading-relaxed ${
             isDark
               ? 'bg-black/30 border-white/[0.06] text-zinc-200'
               : 'bg-black/[0.02] border-black/[0.06] text-[#211c19]'
           }`}
         >
-          {currentClipboard || (
+          {currentClipboard ? (
+            currentClipboard.startsWith('[Image') ? (
+              <div className="flex items-center space-x-2.5 font-medium py-1">
+                <ImageIcon className="w-5 h-5 text-sky-500 shrink-0" />
+                <span className="font-semibold">{currentClipboard}</span>
+              </div>
+            ) : (
+              <div className="font-mono">{currentClipboard}</div>
+            )
+          ) : (
             <span className="opacity-50 italic font-sans">
               Clipboard is currently empty or contains non-text content.
             </span>
