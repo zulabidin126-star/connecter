@@ -340,7 +340,47 @@ async fn run_notify(title: &str, body: &str) -> Result<(), Box<dyn std::error::E
 
 fn launch_gui() -> Result<(), Box<dyn std::error::Error>> {
     println!("Launching LokSync graphical desktop app...");
-    let _ = Command::new("lok-sync-gui").spawn();
+
+    // Search order:
+    // 1. Sibling binary to the current CLI executable (e.g. target/release/lok-sync-gui or ~/.local/bin/lok-sync-gui)
+    // 2. ~/.local/bin/lok-sync-gui
+    // 3. System PATH: "lok-sync-gui"
+    let mut candidates = Vec::new();
+
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(dir) = current_exe.parent() {
+            let sibling = dir.join("lok-sync-gui");
+            if sibling.is_file() {
+                candidates.push(sibling);
+            }
+        }
+    }
+
+    if let Ok(home) = std::env::var("HOME") {
+        let local_bin = std::path::PathBuf::from(home).join(".local/bin/lok-sync-gui");
+        if local_bin.is_file() {
+            candidates.push(local_bin);
+        }
+    }
+
+    candidates.push(std::path::PathBuf::from("lok-sync-gui"));
+
+    for binary in candidates {
+        match Command::new(&binary).spawn() {
+            Ok(_) => {
+                println!("\x1b[1;32m✔ Opened LokSync GUI ({})\x1b[0m", binary.display());
+                return Ok(());
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => {
+                eprintln!("\x1b[1;31m✖ Error launching {}: {}\x1b[0m", binary.display(), e);
+                return Err(Box::new(e));
+            }
+        }
+    }
+
+    eprintln!("\x1b[1;31m✖ Could not find 'lok-sync-gui' executable.\x1b[0m");
+    eprintln!("  Run directly: \x1b[1;36m./target/release/lok-sync-gui\x1b[0m");
     Ok(())
 }
 
