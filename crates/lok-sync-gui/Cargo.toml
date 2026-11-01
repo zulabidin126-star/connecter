@@ -2,7 +2,10 @@
 name = "lok-sync-gui"
 version = "0.1.0"
 edition = "2021"
-description = "LokSync lightweight GUI / CLI client"
+description = "LokSync modern GUI & CLI client"
+
+[build-dependencies]
+tauri-build = { version = "2", default-features = false }
 
 [dependencies]
 lok-proto = { path = "../lok-proto" }
@@ -13,5 +16,4 @@ clap = { version = "4", features = ["derive"] }
 ksni = "0.2"
 qrcode = { version = "0.14", default-features = false }
 thiserror = "1"
-eframe = "0.28"
-egui = "0.28"
+tauri = { version = "2", default-features = false, features = ["wry"] }

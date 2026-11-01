@@ -1,9 +1,8 @@
-mod gui_app;
-mod gui_state;
+mod commands;
 mod ipc_client;
-mod ipc_worker;
 mod pair;
 mod status;
+mod tauri_bridge;
 mod tray;
 mod waybar;
 
@@ -15,12 +14,18 @@ use lok_proto::ipc::{IpcRequest, IpcResponse};
 #[command(name = "lok-sync-gui")]
 #[command(author = "LokSync Contributors")]
 #[command(version = env!("CARGO_PKG_VERSION"))]
-#[command(about = "LokSync modern GUI & CLI client for desktop dashboard, Waybar, tray, and pairing", long_about = None)]
+#[command(
+    about = "LokSync modern GUI & CLI client for desktop dashboard, Waybar, tray, and pairing",
+    long_about = None
+)]
 struct Cli {
     #[arg(long, help = "Launch graphical desktop dashboard")]
     gui: bool,
 
-    #[arg(long, help = "Output continuous JSON lines for Waybar custom module")]
+    #[arg(
+        long,
+        help = "Output continuous JSON lines for Waybar custom module"
+    )]
     waybar: bool,
 
     #[arg(long, help = "Run StatusNotifierItem system tray icon")]
@@ -32,7 +37,11 @@ struct Cli {
     #[arg(long, help = "Print current connection status and paired peers")]
     status: bool,
 
-    #[arg(long, value_name = "PEER_ID", help = "Unpair and revoke a peer device")]
+    #[arg(
+        long,
+        value_name = "PEER_ID",
+        help = "Unpair and revoke a peer device"
+    )]
     unpair: Option<String>,
 }
 
@@ -68,10 +77,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .enable_all()
             .build()?;
         rt.block_on(async {
-            let mut client = IpcClient::connect().await.map_err(|e| {
-                format!("Cannot connect to lok-sync-d: {e}")
-            })?;
-            match client.request(&IpcRequest::Unpair { peer: peer_id.clone() }).await? {
+            let mut client = IpcClient::connect()
+                .await
+                .map_err(|e| format!("Cannot connect to lok-sync-d: {e}"))?;
+            match client
+                .request(&IpcRequest::Unpair {
+                    peer: peer_id.clone(),
+                })
+                .await?
+            {
                 IpcResponse::Ok { .. } => {
                     println!("Successfully unpaired peer '{peer_id}'");
                 }
@@ -94,19 +108,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // Default: Launch the modern graphical user interface!
-    let native_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([820.0, 580.0])
-            .with_min_inner_size([640.0, 480.0])
-            .with_title("LokSync — Local Device Bridge"),
-        ..Default::default()
-    };
-
-    eframe::run_native(
-        "LokSync",
-        native_options,
-        Box::new(|cc| Ok(Box::new(gui_app::LokSyncGuiApp::new(cc)))),
-    )
-    .map_err(|e| format!("GUI launch failed: {e}").into())
+    // Default: Launch modern Tauri v2 Desktop GUI
+    tauri_bridge::run_tauri_app()
 }

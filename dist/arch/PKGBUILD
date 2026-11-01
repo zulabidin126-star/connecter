@@ -6,12 +6,12 @@ pkgdesc="Ultra-lightweight local phone <-> Linux sync daemon (notifications, bat
 arch=('x86_64' 'aarch64')
 url="https://github.com/loksync/loksync"
 license=('MIT')
-depends=('systemd')
+depends=('systemd' 'gtk3' 'webkit2gtk-4.1' 'libsoup3')
 optdepends=('mako: notification daemon for Wayland'
             'dunst: notification daemon'
             'swaync: notification center for Sway/Hyprland'
             'waybar: battery module in the status bar')
-makedepends=('cargo')
+makedepends=('cargo' 'nodejs' 'npm' 'pkg-config')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 options=('!lto')
@@ -20,10 +20,12 @@ prepare() {
   cd "$pkgname-$pkgver"
   export RUSTUP_TOOLCHAIN=stable
   cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+  cd crates/lok-sync-gui/ui && npm ci
 }
 
 build() {
   cd "$pkgname-$pkgver"
+  cd crates/lok-sync-gui/ui && npm run build && cd ../../
   export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR=target
   cargo build --frozen --release -p lok-sync-d -p lok-sync-gui
 }

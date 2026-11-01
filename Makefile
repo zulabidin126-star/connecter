@@ -1,14 +1,17 @@
 PREFIX ?= /usr/local
 DESTDIR ?=
 
-.PHONY: all build release test clean install uninstall
+.PHONY: all frontend build release test clean install uninstall
 
 all: release
 
-build:
+frontend:
+	cd crates/lok-sync-gui/ui && npm run build
+
+build: frontend
 	cargo build
 
-release:
+release: frontend
 	cargo build --release
 
 test:

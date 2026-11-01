@@ -36,9 +36,14 @@
             rustc
             clippy
             rustfmt
+            nodejs
             pkg-config
             systemd
             dbus
+            gtk3
+            webkitgtk_4_1
+            libsoup_3
+            openssl
             wayland
             libxkbcommon
             libglvnd
@@ -47,7 +52,22 @@
             xorg.libXrandr
             xorg.libXi
           ];
+          buildInputs = with pkgs; [
+            gtk3
+            webkitgtk_4_1
+            libsoup_3
+            openssl
+            dbus
+          ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            nodejs
+          ];
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
+            gtk3
+            webkitgtk_4_1
+            libsoup_3
+            openssl
             libglvnd
             wayland
             libxkbcommon
