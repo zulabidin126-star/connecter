@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'clipboard' as ActiveTab,
-      label: 'Send clipboard',
+      label: 'Send files & clipboard',
       icon: ClipboardCopy,
     },
     {
