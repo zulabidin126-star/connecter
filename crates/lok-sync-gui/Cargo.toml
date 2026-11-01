@@ -16,4 +16,4 @@ clap = { version = "4", features = ["derive"] }
 ksni = "0.2"
 qrcode = { version = "0.14", default-features = false }
 thiserror = "1"
-tauri = { version = "2", default-features = false, features = ["wry"] }
+tauri = { version = "2", default-features = false, features = ["wry", "custom-protocol"] }
