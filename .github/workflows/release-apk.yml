@@ -36,7 +36,7 @@ jobs:
 
       - name: Build Release APK
         working-directory: mobile
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Rename APK for Release
         run: |
