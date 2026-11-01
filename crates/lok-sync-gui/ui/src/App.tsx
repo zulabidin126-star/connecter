@@ -151,20 +151,41 @@ export function App() {
     }
   }, []);
 
-  // Initial load and periodic polling
+  // Initial load and power-conscious periodic polling
   useEffect(() => {
     refreshStatus();
     refreshMedia();
     refreshSystemd();
     refreshClipboard();
 
+    // Zero-battery drain when window is minimized or inactive:
+    // Only poll when the window is actually visible to the user.
+    let systemdTick = 0;
     const interval = setInterval(() => {
+      if (document.hidden) return; // Zero battery wakeups when hidden!
+
       refreshStatus();
       refreshMedia();
-      refreshSystemd();
-    }, 2000);
 
-    return () => clearInterval(interval);
+      systemdTick++;
+      if (systemdTick % 10 === 0) {
+        refreshSystemd();
+      }
+    }, 3000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        refreshStatus();
+        refreshMedia();
+        refreshClipboard();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [refreshStatus, refreshMedia, refreshSystemd, refreshClipboard]);
 
   // Real-time Tauri event listener from IPC Unix socket
