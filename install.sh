@@ -93,10 +93,10 @@ mkdir -p "${CONFIG_DIR}"
 
 # Install executables
 install -m 755 "${SRC_DIR}/target/release/lok-sync-d" "${BIN_DIR}/lok-sync-d"
+install -m 755 "${SRC_DIR}/target/release/lok-sync" "${BIN_DIR}/lok-sync"
 install -m 755 "${SRC_DIR}/target/release/lok-sync-gui" "${BIN_DIR}/lok-sync-gui"
-ln -sf "${BIN_DIR}/lok-sync-gui" "${BIN_DIR}/lok-sync"
-ln -sf "${BIN_DIR}/lok-sync-gui" "${BIN_DIR}/loksync"
-ok "Installed executables and CLI aliases (lok-sync, loksync) to ${BIN_DIR}/"
+ln -sf "${BIN_DIR}/lok-sync" "${BIN_DIR}/loksync"
+ok "Installed executables (lok-sync-d, lok-sync CLI, lok-sync-gui) to ${BIN_DIR}/"
 
 # Install systemd user services
 install -m 644 "${SRC_DIR}/dist/systemd/lok-sync.service" "${SYSTEMD_USER_DIR}/lok-sync.service"

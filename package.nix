@@ -33,8 +33,10 @@ pkgs.stdenv.mkDerivation rec {
 
     # Install executables
     cp target/release/lok-sync-d $out/bin/lok-sync-d
+    cp target/release/lok-sync $out/bin/lok-sync
     cp target/release/lok-sync-gui $out/bin/lok-sync-gui
-    chmod +x $out/bin/lok-sync-d $out/bin/lok-sync-gui
+    chmod +x $out/bin/lok-sync-d $out/bin/lok-sync $out/bin/lok-sync-gui
+    ln -s $out/bin/lok-sync $out/bin/loksync
 
     # Install systemd user service units
     cp dist/systemd/lok-sync.service $out/lib/systemd/user/

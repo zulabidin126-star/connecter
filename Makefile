@@ -23,7 +23,9 @@ clean:
 install: release
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 target/release/lok-sync-d $(DESTDIR)$(PREFIX)/bin/lok-sync-d
+	install -m 755 target/release/lok-sync $(DESTDIR)$(PREFIX)/bin/lok-sync
 	install -m 755 target/release/lok-sync-gui $(DESTDIR)$(PREFIX)/bin/lok-sync-gui
+	ln -sf $(DESTDIR)$(PREFIX)/bin/lok-sync $(DESTDIR)$(PREFIX)/bin/loksync
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/user
 	install -m 644 dist/systemd/lok-sync.service $(DESTDIR)$(PREFIX)/lib/systemd/user/lok-sync.service
 	install -m 644 dist/systemd/lok-sync.slice $(DESTDIR)$(PREFIX)/lib/systemd/user/lok-sync.slice
@@ -36,7 +38,9 @@ install: release
 install-user: release
 	install -d $(HOME)/.local/bin
 	install -m 755 target/release/lok-sync-d $(HOME)/.local/bin/lok-sync-d
+	install -m 755 target/release/lok-sync $(HOME)/.local/bin/lok-sync
 	install -m 755 target/release/lok-sync-gui $(HOME)/.local/bin/lok-sync-gui
+	ln -sf $(HOME)/.local/bin/lok-sync $(HOME)/.local/bin/loksync
 	install -d $(HOME)/.config/systemd/user
 	install -m 644 dist/systemd/lok-sync.service $(HOME)/.config/systemd/user/lok-sync.service
 	install -m 644 dist/systemd/lok-sync.slice $(HOME)/.config/systemd/user/lok-sync.slice

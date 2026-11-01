@@ -3,6 +3,7 @@ members = [
     "crates/lok-proto",
     "crates/lok-crypto",
     "crates/lok-sync-d",
+    "crates/lok-sync-cli",
     "crates/lok-sync-gui",
 ]
 resolver = "2"
