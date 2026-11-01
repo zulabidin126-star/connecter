@@ -19,7 +19,6 @@ StateDirectory=lok-sync
 # --- Self-healing ---
 Restart=on-failure
 RestartSec=2
-WatchdogSec=30
 
 # --- Resource throttling ---
 Slice=lok-sync.slice

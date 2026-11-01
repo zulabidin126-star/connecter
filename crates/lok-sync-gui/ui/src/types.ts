@@ -1,10 +1,3 @@
-export interface LocalBattery {
-  percent: number;
-  charging: boolean;
-  plugged: boolean;
-  timestamp: number;
-}
-
 export interface PeerBattery {
   percent: number;
   charging: boolean;
@@ -22,9 +15,11 @@ export interface PeerInfo {
 export interface StateSnapshot {
   device_name: string;
   device_id: string;
-  local_battery: LocalBattery | null;
+  daemon_version?: string;
+  local_battery: PeerBattery | null;
   peers: PeerInfo[];
-  socket_path: string;
+  pairing_active?: boolean;
+  socket_path?: string;
 }
 
 export interface SyncedNotification {

@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { NotificationsHub } from './components/NotificationsHub';
@@ -14,46 +16,15 @@ import type {
   GuiSettings,
   MediaPlayerInfo,
   SystemdServiceStatus,
+  PeerBattery,
 } from './types';
-
-// Tauri invoke and listen helpers (safe fallback if opened in browser)
-let tauriInvoke: (<T>(cmd: string, args?: Record<string, unknown>) => Promise<T>) | null = null;
-let tauriListen: (<T>(event: string, handler: (e: { payload: T }) => void) => Promise<() => void>) | null = null;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const core = (window as any).__TAURI__?.core;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const event = (window as any).__TAURI__?.event;
-  if (core?.invoke) {
-    tauriInvoke = core.invoke;
-  }
-  if (event?.listen) {
-    tauriListen = event.listen;
-  }
-} catch {
-  // running in browser / mock mode
-}
-
-const DEFAULT_SNAPSHOT: StateSnapshot = {
-  device_name: 'Linux-Machine',
-  device_id: '3eae2431',
-  local_battery: {
-    percent: 88,
-    charging: true,
-    plugged: true,
-    timestamp: Date.now(),
-  },
-  peers: [],
-  socket_path: '/run/user/1000/lok-sync/ctl.sock',
-};
 
 const DEFAULT_SETTINGS: GuiSettings = {
   autostart: true,
   plain_text_only: true,
   hide_body_when_locked: true,
   forward_laptop_to_phone: true,
-  device_name: 'Linux-Machine',
+  device_name: 'Linux-Host',
   port: 47100,
 };
 
@@ -71,9 +42,18 @@ const DEFAULT_SYSTEMD: SystemdServiceStatus = {
   status_text: 'Inactive',
 };
 
+// Safe invoke wrapper that doesn't crash if running in browser
+async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  try {
+    return await invoke<T>(cmd, args);
+  } catch (err) {
+    throw err;
+  }
+}
+
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [snapshot, setSnapshot] = useState<StateSnapshot | null>(DEFAULT_SNAPSHOT);
+  const [snapshot, setSnapshot] = useState<StateSnapshot | null>(null);
   const [mediaInfo, setMediaInfo] = useState<MediaPlayerInfo | null>(DEFAULT_MEDIA);
   const [systemdStatus, setSystemdStatus] = useState<SystemdServiceStatus | null>(DEFAULT_SYSTEMD);
   const [clipboardContent, setClipboardContent] = useState<string>('');
@@ -96,23 +76,32 @@ export function App() {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Fetch status snapshot from daemon
+  // Fetch status snapshot from daemon & direct battery fallback
   const refreshStatus = useCallback(async () => {
-    if (!tauriInvoke) return;
     try {
-      const snap = await tauriInvoke<StateSnapshot>('get_daemon_status');
+      const snap = await safeInvoke<StateSnapshot>('get_daemon_status');
       setSnapshot(snap);
       setIsConnected(true);
     } catch {
-      setIsConnected(false);
+      // Fallback: try getting host battery directly
+      try {
+        const bat = await safeInvoke<PeerBattery | null>('get_host_battery');
+        setSnapshot((prev) => ({
+          device_name: prev?.device_name || 'Linux-Host',
+          device_id: prev?.device_id || 'local',
+          local_battery: bat,
+          peers: prev?.peers || [],
+        }));
+      } catch {
+        setIsConnected(false);
+      }
     }
   }, []);
 
   // Fetch media status via MPRIS
   const refreshMedia = useCallback(async () => {
-    if (!tauriInvoke) return;
     try {
-      const media = await tauriInvoke<MediaPlayerInfo>('get_media_status');
+      const media = await safeInvoke<MediaPlayerInfo>('get_media_status');
       setMediaInfo(media);
     } catch {
       // ignore
@@ -121,9 +110,8 @@ export function App() {
 
   // Fetch systemd user service status
   const refreshSystemd = useCallback(async () => {
-    if (!tauriInvoke) return;
     try {
-      const status = await tauriInvoke<SystemdServiceStatus>('get_systemd_status');
+      const status = await safeInvoke<SystemdServiceStatus>('get_systemd_status');
       setSystemdStatus(status);
     } catch {
       // ignore
@@ -132,9 +120,8 @@ export function App() {
 
   // Fetch current Linux clipboard content
   const refreshClipboard = useCallback(async () => {
-    if (!tauriInvoke) return;
     try {
-      const text = await tauriInvoke<string>('get_clipboard_content');
+      const text = await safeInvoke<string>('get_clipboard_content');
       setClipboardContent(text);
     } catch {
       // ignore
@@ -152,17 +139,15 @@ export function App() {
       refreshStatus();
       refreshMedia();
       refreshSystemd();
-    }, 2500);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [refreshStatus, refreshMedia, refreshSystemd, refreshClipboard]);
 
   // Real-time Tauri event listener from IPC Unix socket
   useEffect(() => {
-    if (!tauriListen) return;
-
     let unlisten: (() => void) | undefined;
-    tauriListen<{ type: string; data?: unknown }>('daemon-event', (event) => {
+    listen<{ type: string; data?: unknown }>('daemon-event', (event) => {
       const payload = event.payload;
       if (payload.type === 'Battery') {
         refreshStatus();
@@ -206,7 +191,7 @@ export function App() {
       }
     }).then((fn) => {
       unlisten = fn;
-    });
+    }).catch(() => {});
 
     return () => {
       if (unlisten) unlisten();
@@ -215,129 +200,87 @@ export function App() {
 
   // Media controls handler
   const handleMediaControl = async (action: string) => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('media_control', { action });
-        setTimeout(refreshMedia, 200);
-      } catch (e) {
-        showToast(`Media error: ${e}`);
-      }
-    } else {
-      showToast(`Media action: ${action}`);
+    try {
+      await safeInvoke('media_control', { action });
+      setTimeout(refreshMedia, 150);
+    } catch (e) {
+      showToast(`Media error: ${e}`);
     }
   };
 
   // Systemd service manager handler
   const handleManageSystemd = async (action: string) => {
-    if (tauriInvoke) {
-      try {
-        const msg = await tauriInvoke<string>('manage_systemd_service', { action });
-        showToast(msg);
-        setTimeout(() => {
-          refreshSystemd();
-          refreshStatus();
-        }, 600);
-      } catch (e) {
-        showToast(`Service error: ${e}`);
-      }
-    } else {
-      showToast(`Systemd action: ${action}`);
+    try {
+      const msg = await safeInvoke<string>('manage_systemd_service', { action });
+      showToast(msg);
+      setTimeout(() => {
+        refreshSystemd();
+        refreshStatus();
+      }, 500);
+    } catch (e) {
+      showToast(`Service error: ${e}`);
     }
   };
 
   // Clipboard handler
   const handleSetClipboard = async (text: string) => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('set_clipboard_content', { text });
-        setClipboardContent(text);
-        showToast('Copied to system clipboard');
-      } catch (e) {
-        showToast(`Clipboard error: ${e}`);
-      }
-    } else {
+    try {
+      await safeInvoke('set_clipboard_content', { text });
       setClipboardContent(text);
       showToast('Copied to system clipboard');
+    } catch (e) {
+      showToast(`Clipboard error: ${e}`);
     }
   };
 
   // Push note / link to mobile device
   const handleSendToPhone = async (text: string) => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('send_test_notification', {
-          title: 'Clipboard from Laptop',
-          body: text,
-        });
-        showToast('Shared with mobile device!');
-      } catch (e) {
-        showToast(`Send error: ${e}`);
-      }
-    } else {
+    try {
+      await safeInvoke('send_test_notification', {
+        title: 'Clipboard from Laptop',
+        body: text,
+      });
       showToast('Shared with mobile device!');
+    } catch (e) {
+      showToast(`Send error: ${e}`);
     }
   };
 
   // Send test desktop notification
   const handleSendTestNotification = async (title: string, body: string) => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('send_test_notification', { title, body });
-        showToast('Test notification triggered!');
-      } catch (e) {
-        showToast(`Notification error: ${e}`);
-      }
-    } else {
-      showToast(`Notification sent: ${title}`);
+    try {
+      await safeInvoke('send_test_notification', { title, body });
+      showToast('Test notification triggered!');
+    } catch (e) {
+      showToast(`Notification error: ${e}`);
     }
   };
 
   // Pairing Handlers
   const handleOpenPairing = async () => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('start_pairing');
-      } catch (e) {
-        showToast(`Pairing error: ${e}`);
-      }
-    } else {
-      setPairingState({
-        is_open: true,
-        pin: '739214',
-        qr: '',
-        expires_in_secs: 120,
-        started_at: Date.now(),
-        status: 'Waiting for device to enter PIN...',
-      });
+    try {
+      await safeInvoke('start_pairing');
+    } catch (e) {
+      showToast(`Pairing error: ${e}`);
     }
   };
 
   const handleCancelPairing = async () => {
-    if (tauriInvoke) {
-      await tauriInvoke('cancel_pairing');
+    try {
+      await safeInvoke('cancel_pairing');
+    } catch {
+      // ignore
     }
     setPairingState((prev) => ({ ...prev, is_open: false }));
   };
 
   const handleUnpair = async (peerId: string) => {
-    if (tauriInvoke) {
-      try {
-        await tauriInvoke('unpair_peer', { peerId });
-        showToast(`Unpaired device ${peerId}`);
-        refreshStatus();
-      } catch (e) {
-        showToast(`Failed to unpair: ${e}`);
-      }
-    } else {
-      setSnapshot((prev) =>
-        prev
-          ? {
-              ...prev,
-              peers: prev.peers.filter((p) => p.id !== peerId),
-            }
-          : null
-      );
-      showToast('Device unpaired');
+    try {
+      await safeInvoke('unpair_peer', { peerId });
+      showToast(`Unpaired device ${peerId}`);
+      refreshStatus();
+    } catch (e) {
+      showToast(`Failed to unpair: ${e}`);
     }
   };
 
@@ -349,17 +292,15 @@ export function App() {
   const handleUpdateSettings = (partial: Partial<GuiSettings>) => {
     const updated = { ...settings, ...partial };
     setSettings(updated);
-    if (tauriInvoke) {
-      tauriInvoke('update_settings', { settings: updated }).catch(() => {});
-    }
+    safeInvoke('update_settings', { settings: updated }).catch(() => {});
     showToast('Settings saved');
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0c0d17] text-slate-100 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden ambient-bg text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-white">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl bg-indigo-600/90 text-white text-xs font-semibold shadow-xl shadow-indigo-600/30 backdrop-blur-md border border-indigo-400/30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-600 text-white text-xs font-bold shadow-2xl shadow-indigo-600/40 backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {toast}
         </div>
       )}
@@ -375,8 +316,8 @@ export function App() {
       />
 
       {/* Main View Area */}
-      <main className="flex-1 h-screen overflow-y-auto p-8 relative">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 h-screen overflow-y-auto p-6 sm:p-10 relative">
+        <div className="max-w-5xl mx-auto space-y-8">
           {activeTab === 'dashboard' && (
             <Dashboard
               snapshot={snapshot}

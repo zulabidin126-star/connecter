@@ -10,6 +10,7 @@ pub fn run_tauri_app() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::get_daemon_status,
+            commands::get_host_battery,
             commands::start_pairing,
             commands::cancel_pairing,
             commands::unpair_peer,
