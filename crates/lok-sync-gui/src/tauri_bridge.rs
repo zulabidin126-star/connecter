@@ -22,6 +22,8 @@ pub fn run_tauri_app() -> Result<(), Box<dyn std::error::Error>> {
             commands::manage_systemd_service,
             commands::get_clipboard_content,
             commands::set_clipboard_content,
+            commands::discover_network_devices,
+            commands::connect_to_network_device,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

@@ -67,4 +67,14 @@ export interface SystemdServiceStatus {
   status_text: string;
 }
 
+export interface DiscoveredNetworkDevice {
+  id: string;
+  name: string;
+  ip: string;
+  port: number;
+  device_type: string;
+  is_online: boolean;
+  signal: string;
+}
+
 export type ActiveTab = 'dashboard' | 'notifications' | 'media' | 'clipboard' | 'settings';

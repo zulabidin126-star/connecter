@@ -456,6 +456,11 @@ export function App() {
           pairingState={pairingState}
           theme={theme}
           onCancel={handleCancelPairing}
+          safeInvoke={safeInvoke}
+          onDeviceConnected={(name) => {
+            showToast(`Connected to ${name}!`);
+            refreshStatus();
+          }}
         />
       )}
     </div>
