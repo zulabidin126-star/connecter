@@ -1,22 +1,19 @@
 import React from 'react';
 import {
-  Laptop,
   Smartphone,
-  Zap,
   Plus,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Music,
   Play,
   Pause,
   SkipForward,
   SkipBack,
-  Volume2,
-  Cpu,
+  Share2,
+  Bell,
+  Music,
   BatteryMedium,
-  ShieldCheck,
+  Zap,
+  Lock,
+  FileUp,
 } from 'lucide-react';
 import type { StateSnapshot, MediaPlayerInfo, SystemdServiceStatus } from '../types';
 
@@ -28,13 +25,12 @@ interface DashboardProps {
   onOpenPairing: () => void;
   onUnpair: (peerId: string) => void;
   onMediaControl: (action: string) => Promise<void>;
-  onNavigateTab: (tab: 'media' | 'clipboard' | 'settings') => void;
+  onNavigateTab: (tab: 'notifications' | 'media' | 'clipboard' | 'settings') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   snapshot,
   mediaInfo,
-  systemdStatus,
   theme,
   onOpenPairing,
   onUnpair,
@@ -49,375 +45,278 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const isPlaying = mediaInfo?.status.toLowerCase() === 'playing';
   const hasMedia = mediaInfo && mediaInfo.title !== 'No Media Playing' && mediaInfo.title.trim() !== '';
 
-  const formatLastSeen = (timestamp: number) => {
-    if (!timestamp) return 'Never';
-    const diff = Math.floor(Date.now() / 1000 - timestamp);
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    return `${Math.floor(diff / 3600)}h ago`;
-  };
-
-  const getBatteryColorGradient = (pct: number) => {
-    if (pct > 40) return 'from-emerald-400 via-teal-400 to-sky-400';
-    if (pct > 20) return 'from-amber-400 via-orange-400 to-amber-500';
-    return 'from-rose-500 via-red-500 to-rose-600';
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Top Header - Exact KDE Connect Header style */}
+      <div
+        className={`flex items-center justify-between pb-4 border-b ${
+          isDark ? 'border-white/[0.07]' : 'border-black/[0.06]'
+        }`}
+      >
         <div>
-          <h2
-            className={`text-2xl sm:text-3xl font-black tracking-tight ${
-              isDark ? 'title-gradient-dark' : 'title-gradient-light'
+          <h2 className="text-2xl font-bold tracking-tight">
+            {primaryPeer ? primaryPeer.name : snapshot?.device_name || 'My Linux Laptop'}
+          </h2>
+          <div
+            className={`flex items-center space-x-2 text-xs font-medium mt-1 ${
+              isDark ? 'text-zinc-400' : 'text-[#615a54]'
             }`}
           >
-            System Dashboard
-          </h2>
-          <p className={`text-xs sm:text-sm mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Real-time synchronization between Linux host and connected mobile peers.
-          </p>
+            {primaryPeer?.battery ? (
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Battery: {primaryPeer.battery.percent}%</span>
+              </span>
+            ) : localBat ? (
+              <span className="flex items-center gap-1.5">
+                <BatteryMedium className="w-3.5 h-3.5" />
+                <span>
+                  Battery: {localBat.percent}% {localBat.charging ? '(Charging)' : ''}
+                </span>
+              </span>
+            ) : (
+              <span>Ready for connection</span>
+            )}
+          </div>
         </div>
+
         <button
           onClick={onOpenPairing}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-xl shadow-indigo-500/20 transition-all transform active:scale-95 cursor-pointer ring-1 ring-white/20 self-start sm:self-auto"
+          className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+            isDark
+              ? 'bg-white text-zinc-900 hover:bg-zinc-200'
+              : 'bg-[#211c19] text-white hover:bg-[#38302c]'
+          }`}
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Pair Mobile Device</span>
+          <Plus className="w-4 h-4 stroke-[2.2]" />
+          <span>Pair new device</span>
         </button>
       </div>
 
-      {/* Main Status Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: Laptop Battery (Real Sysfs Telemetry) */}
+      {/* Feature Action Grid (Exact layout from KDE Connect Android - Image 2) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Tile 1: Send Files / Quick Share */}
         <div
-          className={`p-5 rounded-3xl glow-card relative overflow-hidden border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-          }`}
+          onClick={() => onNavigateTab('clipboard')}
+          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500">
-                <Laptop className="w-4 h-4" />
+          <div>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              }`}
+            >
+              <FileUp className="w-5 h-5 stroke-[1.8]" />
+            </div>
+            <h3 className="text-base font-bold tracking-tight">Send files</h3>
+            <p
+              className={`text-xs mt-1 font-medium line-clamp-1 ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              Share text, files, and links with paired phone
+            </p>
+          </div>
+        </div>
+
+        {/* Tile 2: Send clipboard */}
+        <div
+          onClick={() => onNavigateTab('clipboard')}
+          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+        >
+          <div>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              }`}
+            >
+              <Share2 className="w-5 h-5 stroke-[1.8]" />
+            </div>
+            <h3 className="text-base font-bold tracking-tight">Send clipboard</h3>
+            <p
+              className={`text-xs mt-1 font-medium line-clamp-1 ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              Copy-paste automatically synced across devices
+            </p>
+          </div>
+        </div>
+
+        {/* Tile 3: Multimedia control */}
+        <div className={`kde-action-tile p-6 flex flex-col justify-between min-h-[140px]`}>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+                }`}
+              >
+                <Music className="w-5 h-5 stroke-[1.8]" />
+              </div>
+              <button
+                onClick={() => onNavigateTab('media')}
+                className="text-xs font-semibold opacity-70 hover:opacity-100 cursor-pointer underline"
+              >
+                Open Player
+              </button>
+            </div>
+            <h3 className="text-base font-bold tracking-tight">Multimedia control</h3>
+            <p
+              className={`text-xs mt-1 font-medium truncate ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              {hasMedia ? `${mediaInfo.title} • ${mediaInfo.artist}` : 'No active media playing'}
+            </p>
+          </div>
+
+          {/* Quick playback controls bar */}
+          <div
+            className={`flex items-center space-x-2 pt-3 mt-3 border-t ${
+              isDark ? 'border-white/[0.05]' : 'border-black/[0.05]'
+            }`}
+          >
+            <button
+              onClick={() => onMediaControl('previous')}
+              disabled={!hasMedia}
+              className={`p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-30 ${
+                isDark ? 'hover:bg-white/[0.08] text-zinc-300' : 'hover:bg-black/[0.06] text-[#211c19]'
+              }`}
+              title="Previous"
+            >
+              <SkipBack className="w-4 h-4 stroke-[1.8]" />
+            </button>
+            <button
+              onClick={() => onMediaControl('play-pause')}
+              className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                isDark
+                  ? 'bg-white/[0.12] hover:bg-white/[0.18] text-white'
+                  : 'bg-black/[0.08] hover:bg-black/[0.12] text-[#211c19]'
+              }`}
+              title={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+            </button>
+            <button
+              onClick={() => onMediaControl('next')}
+              disabled={!hasMedia}
+              className={`p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-30 ${
+                isDark ? 'hover:bg-white/[0.08] text-zinc-300' : 'hover:bg-black/[0.06] text-[#211c19]'
+              }`}
+              title="Next"
+            >
+              <SkipForward className="w-4 h-4 stroke-[1.8]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Tile 4: Notifications */}
+        <div
+          onClick={() => onNavigateTab('notifications')}
+          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+        >
+          <div>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              }`}
+            >
+              <Bell className="w-5 h-5 stroke-[1.8]" />
+            </div>
+            <h3 className="text-base font-bold tracking-tight">Notifications</h3>
+            <p
+              className={`text-xs mt-1 font-medium line-clamp-1 ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              Phone alerts appear on laptop; forward laptop notifications
+            </p>
+          </div>
+        </div>
+
+        {/* Tile 5: Laptop Battery & Power */}
+        <div className={`kde-action-tile p-6 flex flex-col justify-between min-h-[140px]`}>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+                }`}
+              >
+                {localBat?.charging ? (
+                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500 stroke-[1.8]" />
+                ) : (
+                  <BatteryMedium className="w-5 h-5 stroke-[1.8]" />
+                )}
               </div>
               <span
-                className={`text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'text-slate-300' : 'text-slate-700'
+                className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  isDark ? 'bg-white/[0.06] text-zinc-300' : 'bg-black/[0.05] text-[#443e39]'
+                }`}
+              >
+                {localBat?.charging ? 'Charging' : 'On Battery'}
+              </span>
+            </div>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl font-bold tracking-tight">
+                {localBat ? `${localBat.percent}%` : '--%'}
+              </span>
+              <span
+                className={`text-xs font-medium ${
+                  isDark ? 'text-zinc-400' : 'text-[#615a54]'
                 }`}
               >
                 Laptop Battery
               </span>
             </div>
-
-            {localBat?.charging ? (
-              <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                <Zap className="w-3 h-3 fill-amber-400" />
-                <span>Charging</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                <BatteryMedium className="w-3 h-3" />
-                <span>Discharging</span>
-              </span>
-            )}
           </div>
 
-          <div className="flex items-baseline space-x-2.5 mb-3">
-            <span
-              className={`text-4xl sm:text-5xl font-black tracking-tight ${
-                isDark ? 'title-gradient-dark' : 'title-gradient-light'
-              }`}
-            >
-              {localBat ? `${localBat.percent}%` : '--%'}
-            </span>
-            <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {localBat?.charging ? 'AC Connected' : 'On Battery'}
-            </span>
-          </div>
-
-          {/* Progress bar with dynamic color gradient */}
           <div
-            className={`w-full rounded-full h-2.5 overflow-hidden mb-2.5 p-[1px] ${
-              isDark ? 'bg-white/[0.06]' : 'bg-slate-200'
+            className={`w-full h-2 rounded-full overflow-hidden mt-3 ${
+              isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
             }`}
           >
             <div
-              className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${getBatteryColorGradient(
-                localBat?.percent || 0
-              )}`}
+              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
               style={{ width: `${localBat?.percent || 0}%` }}
             />
           </div>
-
-          <p className={`text-[11px] flex items-center gap-1.5 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>Direct sysfs power supply telemetry</span>
-          </p>
         </div>
 
-        {/* Card 2: Phone Battery */}
+        {/* Tile 6: Remote Control */}
         <div
-          className={`p-5 rounded-3xl glow-card relative overflow-hidden border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-          }`}
+          onClick={() => onNavigateTab('settings')}
+          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-500">
-                <Smartphone className="w-4 h-4" />
-              </div>
-              <span
-                className={`text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Phone Battery
-              </span>
-            </div>
-
-            {primaryPeer?.battery?.charging && (
-              <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                <Zap className="w-3 h-3 fill-amber-400" />
-                <span>Charging</span>
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-baseline space-x-2.5 mb-3">
-            <span
-              className={`text-4xl sm:text-5xl font-black tracking-tight ${
-                isDark ? 'title-gradient-dark' : 'title-gradient-light'
-              }`}
-            >
-              {primaryPeer?.battery ? `${primaryPeer.battery.percent}%` : '--'}
-            </span>
-            <span className={`text-xs font-semibold truncate max-w-[130px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {primaryPeer ? primaryPeer.name : 'Waiting for phone'}
-            </span>
-          </div>
-
-          {/* Progress bar */}
-          <div
-            className={`w-full rounded-full h-2.5 overflow-hidden mb-2.5 p-[1px] ${
-              isDark ? 'bg-white/[0.06]' : 'bg-slate-200'
-            }`}
-          >
+          <div>
             <div
-              className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${getBatteryColorGradient(
-                primaryPeer?.battery?.percent || 0
-              )}`}
-              style={{ width: `${primaryPeer?.battery?.percent || 0}%` }}
-            />
-          </div>
-
-          <p className={`text-[11px] flex items-center gap-1.5 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            {primaryPeer?.online ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-500">E2EE live encrypted stream</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
-                <span>No phone linked yet</span>
-              </>
-            )}
-          </p>
-        </div>
-
-        {/* Card 3: Systemd Daemon Status */}
-        <div
-          className={`p-5 rounded-3xl glow-card relative overflow-hidden border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
-                <Cpu className="w-4 h-4" />
-              </div>
-              <span
-                className={`text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Systemd Service
-              </span>
-            </div>
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${
-                systemdStatus?.active
-                  ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-500 border-rose-500/30'
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
               }`}
             >
-              {systemdStatus?.active ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-
-          <div className="space-y-2 mt-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Host Machine</span>
-              <span className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                {snapshot?.device_name || 'Linux-Host'}
-              </span>
+              <Lock className="w-5 h-5 stroke-[1.8]" />
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Security</span>
-              <span className="text-indigo-500 font-semibold flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>SPAKE2 + AES-GCM</span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>RAM Footprint</span>
-              <span className="text-emerald-500 font-mono font-semibold">&lt; 1 MB (Slice Cap 25M)</span>
-            </div>
+            <h3 className="text-base font-bold tracking-tight">Remote control</h3>
+            <p
+              className={`text-xs mt-1 font-medium line-clamp-1 ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              Lock screen, suspend, or adjust system volume remotely
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Quick Media Controller Card */}
-      <div
-        className={`p-5 rounded-3xl glow-card border space-y-3 ${
-          isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-        }`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-500">
-              <Music className="w-4 h-4" />
-            </div>
-            <div>
-              <h3
-                className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                <span>Now Playing (MPRIS)</span>
-                <span
-                  className={`text-[10px] font-medium px-2 py-0.5 rounded-md border lowercase ${
-                    isDark
-                      ? 'bg-white/[0.05] border-white/[0.08] text-slate-300'
-                      : 'bg-slate-100 border-slate-200 text-slate-600'
-                  }`}
-                >
-                  {mediaInfo?.player_name || 'System Player'}
-                </span>
-              </h3>
-            </div>
-          </div>
-
-          <button
-            onClick={() => onNavigateTab('media')}
-            className="text-xs text-indigo-500 hover:text-indigo-600 font-semibold transition-colors cursor-pointer"
-          >
-            Full Controller &rarr;
-          </button>
-        </div>
-
-        <div
-          className={`flex flex-col sm:flex-row items-center justify-between gap-4 p-3.5 rounded-2xl border ${
-            isDark ? 'bg-black/30 border-white/[0.05]' : 'bg-slate-50 border-slate-200'
-          }`}
-        >
-          <div className="flex items-center space-x-3.5 truncate w-full sm:w-auto">
-            <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
-                isDark
-                  ? 'bg-indigo-950/70 border-indigo-500/30'
-                  : 'bg-indigo-50 border-indigo-200'
-              } ${isPlaying ? 'ring-2 ring-indigo-400/50 shadow-md' : ''}`}
-            >
-              <Music className={`w-5 h-5 text-indigo-500 ${isPlaying ? 'animate-pulse' : ''}`} />
-            </div>
-            <div className="truncate">
-              <p
-                className={`text-xs sm:text-sm font-extrabold truncate max-w-sm ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                {mediaInfo?.title || 'No Media Playing'}
-              </p>
-              <p
-                className={`text-[11px] truncate max-w-xs font-medium ${
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                }`}
-              >
-                {mediaInfo?.artist && mediaInfo.artist !== 'None' ? mediaInfo.artist : 'Playback idle'}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Controls */}
-          <div className="flex items-center space-x-2 shrink-0">
-            <button
-              onClick={() => onMediaControl('previous')}
-              disabled={!hasMedia}
-              className={`p-2 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
-                isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/5'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
-              }`}
-              title="Previous Track"
-            >
-              <SkipBack className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onMediaControl('play-pause')}
-              className="p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-sky-500 hover:opacity-95 text-white shadow-md shadow-indigo-600/30 transition-all cursor-pointer transform active:scale-95"
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4 fill-current" />
-              ) : (
-                <Play className="w-4 h-4 fill-current translate-x-0.5" />
-              )}
-            </button>
-            <button
-              onClick={() => onMediaControl('next')}
-              disabled={!hasMedia}
-              className={`p-2 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
-                isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/5'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
-              }`}
-              title="Next Track"
-            >
-              <SkipForward className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onMediaControl('volume-up')}
-              className={`p-2 rounded-xl border transition-colors cursor-pointer ml-1 ${
-                isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/5'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
-              }`}
-              title="Volume +5%"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Paired Peers Section */}
-      <div
-        className={`p-6 rounded-3xl border ${
-          isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-        }`}
-      >
+      {/* Paired Devices Section */}
+      <div className="kde-card p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3
-            className={`text-sm font-bold uppercase tracking-wider flex items-center gap-2 ${
-              isDark ? 'text-white' : 'text-slate-900'
-            }`}
-          >
+          <h3 className="text-sm font-bold flex items-center gap-2">
             <span>Paired Devices</span>
             <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-200 text-slate-700'
+              className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                isDark ? 'bg-white/[0.08] text-zinc-300' : 'bg-black/[0.05] text-[#615a54]'
               }`}
             >
               {peers.length}
@@ -427,78 +326,73 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {peers.length === 0 ? (
           <div
-            className={`text-center py-10 px-4 rounded-2xl border border-dashed ${
-              isDark ? 'border-white/10 bg-white/[0.01]' : 'border-slate-200 bg-slate-50/50'
+            className={`text-center py-8 px-4 rounded-xl border border-dashed ${
+              isDark ? 'border-white/[0.08] bg-white/[0.01]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}
           >
-            <Smartphone className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-            <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-              No paired devices found
-            </h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-              Click &quot;Pair Mobile Device&quot; to exchange keys and mirror notifications, clipboard, and battery.
+            <Smartphone className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <h4 className="text-xs font-bold">No phone paired yet</h4>
+            <p
+              className={`text-xs max-w-sm mx-auto mt-1 mb-4 font-medium ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
+              Click below to pair your mobile phone and sync notifications, clipboard, and media controls.
             </p>
             <button
               onClick={onOpenPairing}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-white border-white/10'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                  ? 'border-white/10 hover:bg-white/[0.06] text-white'
+                  : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
               }`}
             >
-              Start Pairing
+              Pair Device
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {peers.map((peer) => (
               <div
                 key={peer.id}
-                className={`flex items-center justify-between p-4 rounded-2xl border transition-colors ${
+                className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
                   isDark
-                    ? 'bg-white/[0.02] border-white/[0.06] hover:border-white/15'
-                    : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+                    ? 'bg-white/[0.02] border-white/[0.04] hover:border-white/[0.08]'
+                    : 'bg-black/[0.02] border-black/[0.04] hover:border-black/[0.08]'
                 }`}
               >
                 <div className="flex items-center space-x-3.5">
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-500">
-                      <Smartphone className="w-5 h-5" />
-                    </div>
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${
-                        isDark ? 'border-[#11131f]' : 'border-white'
-                      } ${peer.online ? 'bg-emerald-500' : 'bg-slate-400'}`}
-                    />
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      isDark ? 'bg-white/[0.05]' : 'bg-black/[0.04]'
+                    }`}
+                  >
+                    <Smartphone className="w-5 h-5 stroke-[1.8]" />
                   </div>
                   <div>
-                    <h4 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                      {peer.name}
-                      <span className="text-[10px] font-mono text-slate-400">({peer.id})</span>
-                    </h4>
-                    <p className="text-xs text-slate-400 flex items-center gap-3 mt-0.5 font-medium">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {formatLastSeen(peer.last_seen)}
-                      </span>
-                      {peer.battery && (
-                        <span className={isDark ? 'text-slate-300' : 'text-slate-600'}>
-                          Battery: {peer.battery.percent}%
-                        </span>
+                    <h4 className="text-xs font-bold">{peer.name}</h4>
+                    <p
+                      className={`text-[11px] font-medium mt-0.5 ${
+                        isDark ? 'text-zinc-400' : 'text-[#615a54]'
+                      }`}
+                    >
+                      {peer.online ? (
+                        <span className="text-emerald-500 font-semibold">Online</span>
+                      ) : (
+                        <span>Offline</span>
                       )}
+                      {peer.battery && <span> • Battery: {peer.battery.percent}%</span>}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onUnpair(peer.id)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/15 transition-colors cursor-pointer"
-                    title="Unpair & revoke key"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => onUnpair(peer.id)}
+                  className="p-2 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  title="Unpair this device"
+                >
+                  <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                </button>
               </div>
             ))}
           </div>

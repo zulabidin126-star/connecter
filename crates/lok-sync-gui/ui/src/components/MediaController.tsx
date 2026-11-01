@@ -7,10 +7,8 @@ import {
   SkipForward,
   Square,
   Volume2,
-  Radio,
   RefreshCw,
-  Disc3,
-  Sliders,
+  Radio,
 } from 'lucide-react';
 import type { MediaPlayerInfo } from '../types';
 
@@ -32,193 +30,171 @@ export const MediaController: React.FC<MediaControllerProps> = ({
   const hasMedia = mediaInfo && mediaInfo.title !== 'No Media Playing' && mediaInfo.title.trim() !== '';
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.07]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <Music className="w-6 h-6 text-indigo-500" />
-            <h2
-              className={`text-2xl sm:text-3xl font-black tracking-tight ${
-                isDark ? 'title-gradient-dark' : 'title-gradient-light'
-              }`}
-            >
-              Media Player Controller
-            </h2>
-          </div>
-          <p className={`text-xs sm:text-sm mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Control laptop playback and audio volume seamlessly from Linux desktop or connected phone.
+          <h2 className="text-2xl font-bold tracking-tight">Multimedia Control</h2>
+          <p
+            className={`text-xs mt-1 font-medium ${
+              isDark ? 'text-zinc-400' : 'text-[#615a54]'
+            }`}
+          >
+            Control playback and volume on your laptop from here or your phone
           </p>
         </div>
 
         <button
           onClick={onRefresh}
-          className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-2xl border text-xs font-semibold transition-colors cursor-pointer ${
+          className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
             isDark
-              ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/10'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+              ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
+              : 'border-black/10 hover:bg-black/[0.04] text-[#615a54]'
           }`}
-          title="Refresh media status"
+          title="Refresh player state"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh</span>
         </button>
       </div>
 
-      {/* Main Now Playing Showcase Card */}
-      <div
-        className={`p-8 rounded-3xl glow-card relative overflow-hidden border shadow-2xl ${
-          isDark
-            ? 'glass-panel-dark glow-card-dark border-white/10'
-            : 'glass-panel-light glow-card-light border-slate-200'
-        }`}
-      >
-        {/* Ambient background glow */}
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-          {/* Animated Vinyl Disc / Artwork */}
-          <div className="relative group">
-            <div
-              className={`w-40 h-40 sm:w-48 sm:h-48 rounded-2xl border shadow-2xl flex items-center justify-center relative overflow-hidden ${
-                isDark
-                  ? 'bg-gradient-to-tr from-slate-950 via-indigo-950 to-slate-900 border-indigo-500/20'
-                  : 'bg-gradient-to-tr from-slate-900 via-indigo-900 to-slate-800 border-slate-300'
-              } ${isPlaying ? 'ring-2 ring-indigo-500/40 shadow-indigo-500/20' : ''}`}
-            >
-              {/* Disc grooves visual */}
-              <div className="absolute inset-2 rounded-full border border-white/5 opacity-50" />
-              <div className="absolute inset-6 rounded-full border border-white/5 opacity-40" />
-              <div className="absolute inset-10 rounded-full border border-white/5 opacity-30" />
-
-              <Disc3
-                className={`w-20 h-20 text-indigo-400/90 transition-all duration-1000 ${
-                  isPlaying ? 'animate-spin' : ''
-                }`}
-                style={{ animationDuration: '6s' }}
-              />
-
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-            </div>
-
-            {/* Active player badge */}
-            <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-slate-900/95 border border-white/10 text-[10px] font-bold tracking-wider text-slate-200 uppercase shadow-md flex items-center gap-1.5">
-              <Radio className="w-3 h-3 text-sky-400" />
-              <span>{mediaInfo?.player_name || 'MPRIS'}</span>
-            </div>
+      {/* Main Player Card - Clean, Human, Native */}
+      <div className="kde-card p-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+          {/* Album artwork / Music Tile */}
+          <div
+            className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
+              isDark
+                ? 'bg-white/[0.04] border-white/[0.08] text-white'
+                : 'bg-[#f4ebe4] border-black/[0.06] text-[#211c19]'
+            }`}
+          >
+            <Music className="w-12 h-12 stroke-[1.6] opacity-80" />
           </div>
 
-          {/* Track Info & Controls */}
-          <div className="flex-1 w-full text-center md:text-left space-y-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-center md:justify-start gap-2">
+          {/* Details & Controls */}
+          <div className="flex-1 min-w-0 text-center sm:text-left space-y-4">
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
                 <span
-                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border tracking-wide uppercase ${
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                     isPlaying
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                      : mediaInfo?.status === 'Paused'
-                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                      : 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+                      ? 'bg-emerald-500/15 text-emerald-500'
+                      : 'bg-zinc-500/15 text-zinc-400'
                   }`}
                 >
                   {mediaInfo?.status || 'Stopped'}
                 </span>
-                {mediaInfo?.album && (
-                  <span className={`text-xs truncate max-w-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Album: {mediaInfo.album}
+                {mediaInfo?.player_name && (
+                  <span
+                    className={`text-xs font-medium flex items-center gap-1 ${
+                      isDark ? 'text-zinc-400' : 'text-[#615a54]'
+                    }`}
+                  >
+                    <Radio className="w-3 h-3" />
+                    <span>{mediaInfo.player_name}</span>
                   </span>
                 )}
               </div>
 
-              <h3
-                className={`text-xl sm:text-2xl font-black tracking-tight line-clamp-2 ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
+              <h3 className="text-xl font-bold tracking-tight truncate">
                 {mediaInfo?.title || 'No Media Playing'}
               </h3>
-              <p className={`text-sm font-semibold truncate ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>
-                {mediaInfo?.artist && mediaInfo.artist !== 'None' ? mediaInfo.artist : 'Ready for media input'}
+              <p
+                className={`text-sm mt-0.5 font-medium truncate ${
+                  isDark ? 'text-zinc-400' : 'text-[#615a54]'
+                }`}
+              >
+                {mediaInfo?.artist && mediaInfo.artist !== 'None'
+                  ? mediaInfo.artist
+                  : 'Start playing music or video on your system'}
               </p>
             </div>
 
-            {/* Playback Controls */}
-            <div className="pt-2 flex items-center justify-center md:justify-start gap-4">
+            {/* Controls */}
+            <div className="flex items-center justify-center sm:justify-start space-x-3 pt-1">
               <button
                 onClick={() => onControl('previous')}
                 disabled={!hasMedia}
-                className={`p-3 rounded-2xl border transition-all transform active:scale-95 cursor-pointer shadow-md disabled:opacity-40 ${
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
                   isDark
-                    ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/5'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
+                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
                 }`}
-                title="Previous Track"
+                title="Previous"
               >
-                <SkipBack className="w-5 h-5 fill-current" />
+                <SkipBack className="w-5 h-5 stroke-[1.8]" />
               </button>
 
               <button
                 onClick={() => onControl('play-pause')}
-                className="p-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:opacity-95 text-white shadow-xl shadow-indigo-500/30 transition-all transform active:scale-95 cursor-pointer ring-1 ring-white/20"
+                className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-xs ${
+                  isDark
+                    ? 'bg-white text-zinc-900 hover:bg-zinc-200'
+                    : 'bg-[#211c19] text-white hover:bg-[#38302c]'
+                }`}
                 title={isPlaying ? 'Pause' : 'Play'}
               >
                 {isPlaying ? (
-                  <Pause className="w-6 h-6 fill-current" />
+                  <Pause className="w-5 h-5 fill-current" />
                 ) : (
-                  <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                  <Play className="w-5 h-5 fill-current translate-x-0.5" />
                 )}
               </button>
 
               <button
                 onClick={() => onControl('next')}
                 disabled={!hasMedia}
-                className={`p-3 rounded-2xl border transition-all transform active:scale-95 cursor-pointer shadow-md disabled:opacity-40 ${
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
                   isDark
-                    ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/5'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
+                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
                 }`}
-                title="Next Track"
+                title="Next"
               >
-                <SkipForward className="w-5 h-5 fill-current" />
+                <SkipForward className="w-5 h-5 stroke-[1.8]" />
               </button>
 
               <button
                 onClick={() => onControl('stop')}
                 disabled={!hasMedia}
-                className={`p-3 rounded-2xl border transition-all transform active:scale-95 cursor-pointer shadow-md ml-2 disabled:opacity-40 ${
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
                   isDark
-                    ? 'bg-white/5 hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border-white/5'
-                    : 'bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border-slate-200'
+                    ? 'border-white/10 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400'
+                    : 'border-black/10 hover:bg-rose-50 text-[#615a54] hover:text-rose-600'
                 }`}
-                title="Stop Playback"
+                title="Stop"
               >
                 <Square className="w-4 h-4 fill-current" />
               </button>
             </div>
 
-            {/* Quick Volume Buttons */}
-            <div className="pt-2 flex items-center justify-center md:justify-start gap-3">
-              <span className={`text-xs font-semibold flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            {/* Volume control */}
+            <div className="flex items-center justify-center sm:justify-start space-x-2 pt-2">
+              <span
+                className={`text-xs font-semibold flex items-center gap-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-[#615a54]'
+                }`}
+              >
                 <Volume2 className="w-3.5 h-3.5" />
-                <span>Host Volume:</span>
+                <span>Volume:</span>
               </span>
               <button
                 onClick={() => onControl('volume-down')}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
                   isDark
-                    ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/10'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
+                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
                 }`}
               >
                 -5%
               </button>
               <button
                 onClick={() => onControl('volume-up')}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
                   isDark
-                    ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/10'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
+                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
                 }`}
               >
                 +5%
@@ -228,55 +204,16 @@ export const MediaController: React.FC<MediaControllerProps> = ({
         </div>
       </div>
 
-      {/* Integration Guide / Compatibility Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div
-          className={`p-5 rounded-3xl glow-card border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
+      {/* Info Card */}
+      <div className="kde-card p-5">
+        <h4 className="text-xs font-bold mb-1">Universal MPRIS Support</h4>
+        <p
+          className={`text-xs font-medium leading-relaxed ${
+            isDark ? 'text-zinc-400' : 'text-[#615a54]'
           }`}
         >
-          <div className="flex items-center space-x-2.5 mb-2">
-            <Radio className="w-4 h-4 text-sky-500" />
-            <h4 className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Universal MPRIS Support
-            </h4>
-          </div>
-          <p className={`text-[11px] leading-relaxed font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Works out-of-the-box with Spotify, Firefox, Chrome, Brave, VLC, mpv, Audacious, and Cider.
-          </p>
-        </div>
-
-        <div
-          className={`p-5 rounded-3xl glow-card border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-          }`}
-        >
-          <div className="flex items-center space-x-2.5 mb-2">
-            <Sliders className="w-4 h-4 text-emerald-500" />
-            <h4 className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              PipeWire & PulseAudio
-            </h4>
-          </div>
-          <p className={`text-[11px] leading-relaxed font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Volume commands dynamically bind to <code>wpctl</code> (modern PipeWire) and fallback to <code>pactl</code>.
-          </p>
-        </div>
-
-        <div
-          className={`p-5 rounded-3xl glow-card border ${
-            isDark ? 'glass-panel-dark glow-card-dark' : 'glass-panel-light glow-card-light'
-          }`}
-        >
-          <div className="flex items-center space-x-2.5 mb-2">
-            <Music className="w-4 h-4 text-indigo-500" />
-            <h4 className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Remote Phone Control
-            </h4>
-          </div>
-          <p className={`text-[11px] leading-relaxed font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Paired mobile devices can pause, play, skip songs, or adjust laptop volume directly from phone lockscreens.
-          </p>
-        </div>
+          Compatible with all standard Linux media players including Spotify, Firefox, Chrome, Brave, VLC, mpv, and Rhythmbox. Volume commands interface cleanly with PipeWire (<code className="font-mono text-[11px]">wpctl</code>) and PulseAudio (<code className="font-mono text-[11px]">pactl</code>).
+        </p>
       </div>
     </div>
   );

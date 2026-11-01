@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS: GuiSettings = {
   plain_text_only: true,
   hide_body_when_locked: true,
   forward_laptop_to_phone: true,
-  device_name: 'Linux-Host',
+  device_name: 'Linux Laptop',
   port: 47100,
   theme: 'dark',
 };
@@ -96,7 +96,7 @@ export function App() {
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 3000);
   }, []);
 
   // Fetch status snapshot from daemon & direct battery fallback
@@ -110,7 +110,7 @@ export function App() {
       try {
         const bat = await safeInvoke<PeerBattery | null>('get_host_battery');
         setSnapshot((prev) => ({
-          device_name: prev?.device_name || 'Linux-Host',
+          device_name: prev?.device_name || 'Linux Laptop',
           device_id: prev?.device_id || 'local',
           local_battery: bat,
           peers: prev?.peers || [],
@@ -176,7 +176,7 @@ export function App() {
         refreshStatus();
       } else if (payload.type === 'PeerOnline') {
         refreshStatus();
-        showToast('New peer mobile device connected');
+        showToast('Phone connected');
       } else if (payload.type === 'PeerOffline') {
         refreshStatus();
       } else if (payload.type === 'PairPin') {
@@ -188,12 +188,12 @@ export function App() {
           qr: data.qr || '',
           expires_in_secs: data.expires_in_secs || 120,
           started_at: Date.now(),
-          status: 'Waiting for phone to confirm PIN...',
+          status: 'Waiting for device to confirm PIN...',
         });
       } else if (payload.type === 'PairDone') {
         setPairingState((prev) => ({ ...prev, is_open: false }));
         refreshStatus();
-        showToast('Successfully paired with mobile device!');
+        showToast('Device successfully paired!');
       } else if (payload.type === 'Notification') {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const notif = payload.data as any;
@@ -260,10 +260,10 @@ export function App() {
   const handleSendToPhone = async (text: string) => {
     try {
       await safeInvoke('send_test_notification', {
-        title: 'Clipboard from Laptop',
+        title: 'Shared from Laptop',
         body: text,
       });
-      showToast('Shared with mobile device!');
+      showToast('Sent to phone!');
     } catch (e) {
       showToast(`Send error: ${e}`);
     }
@@ -273,7 +273,7 @@ export function App() {
   const handleSendTestNotification = async (title: string, body: string) => {
     try {
       await safeInvoke('send_test_notification', { title, body });
-      showToast('Test notification triggered!');
+      showToast('Notification sent');
     } catch (e) {
       showToast(`Notification error: ${e}`);
     }
@@ -300,7 +300,7 @@ export function App() {
   const handleUnpair = async (peerId: string) => {
     try {
       await safeInvoke('unpair_peer', { peerId });
-      showToast(`Unpaired device ${peerId}`);
+      showToast(`Device removed`);
       refreshStatus();
     } catch (e) {
       showToast(`Failed to unpair: ${e}`);
@@ -309,7 +309,7 @@ export function App() {
 
   const handleClearNotifications = () => {
     setNotifications([]);
-    showToast('Notification feed cleared');
+    showToast('Notifications cleared');
   };
 
   const handleUpdateSettings = (partial: Partial<GuiSettings>) => {
@@ -323,32 +323,39 @@ export function App() {
 
   return (
     <div
-      className={`flex h-screen w-screen overflow-hidden font-sans transition-colors duration-300 ${
-        isDark ? 'ambient-bg-dark text-slate-100' : 'ambient-bg-light text-slate-800'
+      className={`flex h-screen w-screen overflow-hidden font-sans transition-colors ${
+        isDark ? 'bg-[#131316] text-[#f4f4f7]' : 'bg-[#fbf7f4] text-[#211c19]'
       }`}
     >
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-600 text-white text-xs font-bold shadow-2xl shadow-indigo-600/40 backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all animate-in fade-in duration-150 ${
+            isDark
+              ? 'bg-[#22222a] text-white border border-white/10'
+              : 'bg-[#211c19] text-white'
+          }`}
+        >
           {toast}
         </div>
       )}
 
-      {/* Navigation Sidebar with Theme Switcher */}
+      {/* Navigation Sidebar (KDE Connect Drawer style) */}
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        snapshot={snapshot}
         isConnected={isConnected}
         systemdStatus={systemdStatus}
         notificationCount={notifications.length}
-        pairedCount={snapshot?.peers.length || 0}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onOpenPairing={handleOpenPairing}
       />
 
       {/* Main View Area */}
       <main className="flex-1 h-screen overflow-y-auto p-6 sm:p-10 relative">
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-6">
           {activeTab === 'dashboard' && (
             <Dashboard
               snapshot={snapshot}

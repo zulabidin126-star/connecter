@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { QrCode, X, Copy, Check, Clock, ShieldAlert } from 'lucide-react';
+import { X, Copy, Check, Clock } from 'lucide-react';
 import type { PairingState } from '../types';
 
 interface PairingModalProps {
@@ -43,60 +43,59 @@ export const PairingModal: React.FC<PairingModalProps> = ({
     Math.min(100, (timeLeft / (pairingState.expires_in_secs || 120)) * 100)
   );
 
+  // Format PIN nicely e.g. "492 815"
+  const formattedPin = pairingState.pin
+    ? pairingState.pin.length === 6
+      ? `${pairingState.pin.slice(0, 3)} ${pairingState.pin.slice(3)}`
+      : pairingState.pin
+    : '••••••';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className={`w-full max-w-md border rounded-3xl shadow-2xl overflow-hidden relative ${
+        className={`w-full max-w-sm rounded-2xl border shadow-xl overflow-hidden relative ${
           isDark
-            ? 'bg-[#131625] border-white/10 text-white'
-            : 'bg-white border-slate-200 text-slate-800'
+            ? 'bg-[#1a1a20] border-white/10 text-white'
+            : 'bg-white border-black/10 text-[#211c19]'
         }`}
       >
         {/* Close Button */}
         <button
           onClick={onCancel}
-          className={`absolute top-4 right-4 p-2 rounded-2xl transition-colors cursor-pointer ${
-            isDark
-              ? 'text-slate-400 hover:text-white hover:bg-white/5'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+          className={`absolute top-4 right-4 p-1.5 rounded-lg transition-colors cursor-pointer opacity-60 hover:opacity-100 ${
+            isDark ? 'hover:bg-white/10' : 'hover:bg-black/05'
           }`}
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="p-7 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-500 mx-auto mb-4 shadow-lg shadow-indigo-500/20">
-            <QrCode className="w-6 h-6" />
-          </div>
-
-          <h3
-            className={`text-xl font-black tracking-tight ${
-              isDark ? 'text-white' : 'text-slate-900'
+        <div className="p-6 text-center">
+          <h3 className="text-lg font-bold tracking-tight">Pair New Device</h3>
+          <p
+            className={`text-xs mt-1 mb-5 font-medium ${
+              isDark ? 'text-zinc-400' : 'text-[#615a54]'
             }`}
           >
-            Pair Mobile Device
-          </h3>
-          <p className={`text-xs max-w-xs mx-auto mt-1 mb-6 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Enter this secure one-time 6-digit PIN in your mobile app to perform cryptographic SPAKE2 key exchange.
+            Enter this 6-digit PIN on your phone to securely pair
           </p>
 
-          {/* Large Glowing PIN Card */}
+          {/* Clean PIN Card */}
           <div
-            className={`p-5 rounded-2xl border shadow-inner mb-6 relative group ${
+            className={`p-5 rounded-xl border mb-4 relative flex items-center justify-center ${
               isDark
-                ? 'bg-[#0c0d17] border-indigo-500/30 shadow-black/50'
-                : 'bg-slate-50 border-indigo-200 shadow-slate-200'
+                ? 'bg-black/30 border-white/[0.08]'
+                : 'bg-black/[0.03] border-black/[0.08]'
             }`}
           >
-            <span className="text-4xl font-extrabold font-mono tracking-widest text-indigo-500 select-all">
-              {pairingState.pin || '••••••'}
+            <span className="text-3xl font-bold font-mono tracking-wider select-all">
+              {formattedPin}
             </span>
             <button
               onClick={copyPin}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors cursor-pointer border ${
+              className={`absolute right-3 p-2 rounded-lg transition-colors cursor-pointer border ${
                 isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border-white/5'
-                  : 'bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200 shadow-sm'
+                  ? 'border-white/10 hover:bg-white/10 text-zinc-300'
+                  : 'border-black/10 hover:bg-black/05 text-[#211c19]'
               }`}
               title="Copy PIN"
             >
@@ -108,43 +107,50 @@ export const PairingModal: React.FC<PairingModalProps> = ({
             </button>
           </div>
 
-          {/* Countdown & Expiration */}
-          <div className="space-y-2 mb-6">
+          {/* Timeout Progress */}
+          <div className="space-y-1.5 mb-5">
             <div
-              className={`w-full rounded-full h-2 overflow-hidden ${
-                isDark ? 'bg-slate-800' : 'bg-slate-200'
+              className={`w-full rounded-full h-1.5 overflow-hidden ${
+                isDark ? 'bg-white/10' : 'bg-black/10'
               }`}
             >
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-1000"
+                className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div className={`flex items-center justify-between text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div
+              className={`flex items-center justify-between text-[11px] font-medium ${
+                isDark ? 'text-zinc-400' : 'text-[#615a54]'
+              }`}
+            >
               <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <Clock className="w-3 h-3" />
                 <span>Expires in {timeLeft}s</span>
               </span>
-              <span className="text-[11px] font-mono">SPAKE2 Curve25519</span>
+              <span>Encrypted SPAKE2</span>
             </div>
           </div>
 
-          {/* Security Alert / Status */}
-          <div className="flex items-center justify-center space-x-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl mb-6 font-semibold">
-            <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span className="truncate">{pairingState.status || 'Waiting for phone connection...'}</span>
-          </div>
-
-          {/* Action */}
-          <button
-            onClick={onCancel}
-            className={`w-full py-2.5 rounded-2xl text-xs font-semibold border transition-colors cursor-pointer ${
-              isDark
-                ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border-white/10'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+          {/* Status */}
+          <div
+            className={`p-2.5 rounded-xl text-xs font-medium mb-4 ${
+              isDark ? 'bg-white/[0.04] text-zinc-300' : 'bg-black/[0.03] text-[#443e39]'
             }`}
           >
-            Cancel Pairing
+            {pairingState.status || 'Waiting for connection...'}
+          </div>
+
+          {/* Cancel */}
+          <button
+            onClick={onCancel}
+            className={`w-full py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+              isDark
+                ? 'border-white/10 hover:bg-white/10 text-zinc-300'
+                : 'border-black/10 hover:bg-black/05 text-[#211c19]'
+            }`}
+          >
+            Cancel
           </button>
         </div>
       </div>

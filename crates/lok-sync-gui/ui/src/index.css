@@ -2,72 +2,56 @@
 
 @layer base {
   :root {
-    --bg-primary: #07080e;
-    --bg-canvas: #090a12;
-    --bg-surface: #10121d;
-    --bg-sidebar: #0b0d18;
-    --bg-card: rgba(18, 21, 36, 0.72);
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-glow: rgba(99, 102, 241, 0.4);
-    --accent-primary: #6366f1;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    /* Decent, Human-Crafted Dark Mode (Calm Obsidian / Zinc) */
+    --bg-window: #131316;
+    --bg-sidebar: #18181c;
+    --bg-card: #1f1f25;
+    --bg-tile: #26262e;
+    --bg-tile-hover: #2e2e38;
+    --bg-pill-active: #333340;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-hover: rgba(255, 255, 255, 0.14);
+    --text-primary: #f4f4f7;
+    --text-secondary: #a3a1ad;
+    --text-muted: #6c6a78;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
   }
 
-  /* Light Theme Overrides */
   .light {
-    --bg-primary: #f1f5f9;
-    --bg-canvas: #f8fafc;
-    --bg-surface: #ffffff;
-    --bg-sidebar: #ffffff;
-    --bg-card: rgba(255, 255, 255, 0.88);
-    --border-subtle: rgba(15, 23, 42, 0.08);
-    --border-glow: rgba(99, 102, 241, 0.3);
-    --accent-primary: #4f46e5;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
+    /* Decent, Human-Crafted Light Mode (Soft Warm Peach / Porcelain like KDE Connect) */
+    --bg-window: #fbf7f4;
+    --bg-sidebar: #f3ede7;
+    --bg-card: #ffffff;
+    --bg-tile: #f6eee8;
+    --bg-tile-hover: #ece2da;
+    --bg-pill-active: #fae4dc;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-hover: rgba(0, 0, 0, 0.12);
+    --text-primary: #211c19;
+    --text-secondary: #615a54;
+    --text-muted: #8e857e;
+    --accent: #e0654c;
+    --accent-hover: #c9513a;
   }
 
   body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-primary);
+    background-color: var(--bg-window);
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Cantarell", "Ubuntu", sans-serif;
     user-select: none;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     letter-spacing: -0.01em;
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
-/* Ambient Radial Mesh Layer - Dark Mode */
-.ambient-bg-dark {
-  background-color: #07080e;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.10) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.07) 0px, transparent 50%);
-}
-
-/* Ambient Radial Mesh Layer - Light Mode */
-.ambient-bg-light {
-  background-color: #f1f5f9;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(244, 114, 182, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-}
-
-/* Custom dark / light scrollbar */
+/* Native-style scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -75,57 +59,35 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.2);
+  background: rgba(140, 140, 150, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.5);
+  background: rgba(140, 140, 150, 0.4);
 }
 
-/* Glassmorphism & card glowing effect */
-.glass-panel-dark {
-  background: rgba(16, 19, 32, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Clean, Human-Designed Surface Card */
+.kde-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.glass-panel-light {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+.kde-card:hover {
+  border-color: var(--border-hover);
 }
 
-.glow-card {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+/* KDE Connect Action Tile (matching Android app action grid) */
+.kde-action-tile {
+  background-color: var(--bg-tile);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+  transition: all 0.15s ease;
 }
 
-.glow-card:hover {
-  transform: translateY(-1px);
-}
-
-.glow-card-dark:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 8px 30px -4px rgba(99, 102, 241, 0.16);
-}
-
-.glow-card-light:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 8px 25px -4px rgba(99, 102, 241, 0.12);
-}
-
-/* Typography Helpers */
-.title-gradient-dark {
-  background: linear-gradient(135deg, #ffffff 20%, #e2e8f0 60%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.title-gradient-light {
-  background: linear-gradient(135deg, #0f172a 30%, #334155 70%, #475569 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.kde-action-tile:hover {
+  background-color: var(--bg-tile-hover);
+  border-color: var(--border-hover);
 }
