@@ -7,13 +7,13 @@ import {
   Pause,
   SkipForward,
   SkipBack,
-  Share2,
-  Bell,
-  Music,
-  BatteryMedium,
+  ClipboardList,
+  BellRing,
+  PlayCircle,
+  BatteryCharging,
   Zap,
   Lock,
-  FileUp,
+  FileText,
 } from 'lucide-react';
 import type { StateSnapshot, MediaPlayerInfo, SystemdServiceStatus } from '../types';
 
@@ -46,7 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const hasMedia = mediaInfo && mediaInfo.title !== 'No Media Playing' && mediaInfo.title.trim() !== '';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto w-full">
       {/* Top Header - Exact KDE Connect Header style */}
       <div
         className={`flex items-center justify-between pb-4 border-b ${
@@ -58,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {primaryPeer ? primaryPeer.name : snapshot?.device_name || 'My Linux Laptop'}
           </h2>
           <div
-            className={`flex items-center space-x-2 text-xs font-medium mt-1 ${
+            className={`flex items-center space-x-2 text-xs font-semibold mt-1 ${
               isDark ? 'text-zinc-400' : 'text-[#615a54]'
             }`}
           >
@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             ) : localBat ? (
               <span className="flex items-center gap-1.5">
-                <BatteryMedium className="w-3.5 h-3.5" />
+                <BatteryCharging className="w-4 h-4 text-emerald-500" />
                 <span>
                   Battery: {localBat.percent}% {localBat.charging ? '(Charging)' : ''}
                 </span>
@@ -82,31 +82,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <button
           onClick={onOpenPairing}
-          className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+          className={`inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs outline-none active:scale-95 ${
             isDark
               ? 'bg-white text-zinc-900 hover:bg-zinc-200'
               : 'bg-[#211c19] text-white hover:bg-[#38302c]'
           }`}
         >
-          <Plus className="w-4 h-4 stroke-[2.2]" />
+          <Plus className="w-4 h-4 stroke-[2.4]" />
           <span>Pair new device</span>
         </button>
       </div>
 
       {/* Feature Action Grid (Exact layout from KDE Connect Android - Image 2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Tile 1: Send Files / Quick Share */}
+        {/* Tile 1: Send Files */}
         <div
           onClick={() => onNavigateTab('clipboard')}
-          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+          className="kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px] outline-none active:scale-[0.99] transition-transform"
         >
           <div>
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-xs ${
+                isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
               }`}
             >
-              <FileUp className="w-5 h-5 stroke-[1.8]" />
+              <FileText className="w-5 h-5 stroke-[2]" />
             </div>
             <h3 className="text-base font-bold tracking-tight">Send files</h3>
             <p
@@ -114,7 +114,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 isDark ? 'text-zinc-400' : 'text-[#615a54]'
               }`}
             >
-              Share text, files, and links with paired phone
+              Share text, documents, and links with paired phone
             </p>
           </div>
         </div>
@@ -122,15 +122,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Tile 2: Send clipboard */}
         <div
           onClick={() => onNavigateTab('clipboard')}
-          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+          className="kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px] outline-none active:scale-[0.99] transition-transform"
         >
           <div>
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-xs ${
+                isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
               }`}
             >
-              <Share2 className="w-5 h-5 stroke-[1.8]" />
+              <ClipboardList className="w-5 h-5 stroke-[2]" />
             </div>
             <h3 className="text-base font-bold tracking-tight">Send clipboard</h3>
             <p
@@ -144,21 +144,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Tile 3: Multimedia control */}
-        <div className={`kde-action-tile p-6 flex flex-col justify-between min-h-[140px]`}>
+        <div className="kde-action-tile p-6 flex flex-col justify-between min-h-[140px]">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-xs ${
+                  isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
                 }`}
               >
-                <Music className="w-5 h-5 stroke-[1.8]" />
+                <PlayCircle className="w-5 h-5 stroke-[2]" />
               </div>
               <button
                 onClick={() => onNavigateTab('media')}
-                className="text-xs font-semibold opacity-70 hover:opacity-100 cursor-pointer underline"
+                className="text-xs font-bold opacity-75 hover:opacity-100 cursor-pointer underline outline-none"
               >
-                Open Player
+                Open Player &rarr;
               </button>
             </div>
             <h3 className="text-base font-bold tracking-tight">Multimedia control</h3>
@@ -179,17 +179,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           >
             <button
               onClick={() => onMediaControl('previous')}
-              disabled={!hasMedia}
-              className={`p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-30 ${
+              className={`p-2 rounded-lg transition-colors cursor-pointer outline-none ${
                 isDark ? 'hover:bg-white/[0.08] text-zinc-300' : 'hover:bg-black/[0.06] text-[#211c19]'
               }`}
               title="Previous"
             >
-              <SkipBack className="w-4 h-4 stroke-[1.8]" />
+              <SkipBack className="w-4 h-4 fill-current" />
             </button>
             <button
               onClick={() => onMediaControl('play-pause')}
-              className={`p-2 rounded-lg transition-colors cursor-pointer ${
+              className={`p-2 rounded-lg transition-colors cursor-pointer outline-none ${
                 isDark
                   ? 'bg-white/[0.12] hover:bg-white/[0.18] text-white'
                   : 'bg-black/[0.08] hover:bg-black/[0.12] text-[#211c19]'
@@ -200,13 +199,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
             <button
               onClick={() => onMediaControl('next')}
-              disabled={!hasMedia}
-              className={`p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-30 ${
+              className={`p-2 rounded-lg transition-colors cursor-pointer outline-none ${
                 isDark ? 'hover:bg-white/[0.08] text-zinc-300' : 'hover:bg-black/[0.06] text-[#211c19]'
               }`}
               title="Next"
             >
-              <SkipForward className="w-4 h-4 stroke-[1.8]" />
+              <SkipForward className="w-4 h-4 fill-current" />
             </button>
           </div>
         </div>
@@ -214,15 +212,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Tile 4: Notifications */}
         <div
           onClick={() => onNavigateTab('notifications')}
-          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+          className="kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px] outline-none active:scale-[0.99] transition-transform"
         >
           <div>
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-xs ${
+                isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
               }`}
             >
-              <Bell className="w-5 h-5 stroke-[1.8]" />
+              <BellRing className="w-5 h-5 stroke-[2]" />
             </div>
             <h3 className="text-base font-bold tracking-tight">Notifications</h3>
             <p
@@ -230,28 +228,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 isDark ? 'text-zinc-400' : 'text-[#615a54]'
               }`}
             >
-              Phone alerts appear on laptop; forward laptop notifications
+              Phone alerts appear on laptop; forward desktop alerts
             </p>
           </div>
         </div>
 
         {/* Tile 5: Laptop Battery & Power */}
-        <div className={`kde-action-tile p-6 flex flex-col justify-between min-h-[140px]`}>
+        <div className="kde-action-tile p-6 flex flex-col justify-between min-h-[140px]">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-xs ${
+                  isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
                 }`}
               >
                 {localBat?.charging ? (
-                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500 stroke-[1.8]" />
+                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500 stroke-[2]" />
                 ) : (
-                  <BatteryMedium className="w-5 h-5 stroke-[1.8]" />
+                  <BatteryCharging className="w-5 h-5 stroke-[2]" />
                 )}
               </div>
               <span
-                className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                   isDark ? 'bg-white/[0.06] text-zinc-300' : 'bg-black/[0.05] text-[#443e39]'
                 }`}
               >
@@ -263,7 +261,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {localBat ? `${localBat.percent}%` : '--%'}
               </span>
               <span
-                className={`text-xs font-medium ${
+                className={`text-xs font-semibold ${
                   isDark ? 'text-zinc-400' : 'text-[#615a54]'
                 }`}
               >
@@ -287,15 +285,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Tile 6: Remote Control */}
         <div
           onClick={() => onNavigateTab('settings')}
-          className={`kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px]`}
+          className="kde-action-tile p-6 cursor-pointer flex flex-col justify-between min-h-[140px] outline-none active:scale-[0.99] transition-transform"
         >
           <div>
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                isDark ? 'bg-white/[0.06] text-white' : 'bg-black/[0.05] text-[#211c19]'
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-xs ${
+                isDark ? 'bg-white/[0.08] text-white' : 'bg-black/[0.05] text-[#211c19]'
               }`}
             >
-              <Lock className="w-5 h-5 stroke-[1.8]" />
+              <Lock className="w-5 h-5 stroke-[2]" />
             </div>
             <h3 className="text-base font-bold tracking-tight">Remote control</h3>
             <p
@@ -315,7 +313,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <h3 className="text-sm font-bold flex items-center gap-2">
             <span>Paired Devices</span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                 isDark ? 'bg-white/[0.08] text-zinc-300' : 'bg-black/[0.05] text-[#615a54]'
               }`}
             >
@@ -341,7 +339,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </p>
             <button
               onClick={onOpenPairing}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer outline-none active:scale-95 ${
                 isDark
                   ? 'border-white/10 hover:bg-white/[0.06] text-white'
                   : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
@@ -367,7 +365,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       isDark ? 'bg-white/[0.05]' : 'bg-black/[0.04]'
                     }`}
                   >
-                    <Smartphone className="w-5 h-5 stroke-[1.8]" />
+                    <Smartphone className="w-5 h-5 stroke-[2]" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold">{peer.name}</h4>
@@ -377,7 +375,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       }`}
                     >
                       {peer.online ? (
-                        <span className="text-emerald-500 font-semibold">Online</span>
+                        <span className="text-emerald-500 font-bold">Online</span>
                       ) : (
                         <span>Offline</span>
                       )}
@@ -388,7 +386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 <button
                   onClick={() => onUnpair(peer.id)}
-                  className="p-2 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
                   title="Unpair this device"
                 >
                   <Trash2 className="w-4 h-4 stroke-[1.8]" />

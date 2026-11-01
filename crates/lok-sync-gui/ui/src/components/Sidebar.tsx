@@ -1,17 +1,18 @@
 import React from 'react';
 import {
-  LayoutDashboard,
+  LayoutGrid,
   Bell,
-  Settings,
-  Music,
-  Share2,
-  Laptop,
+  SlidersHorizontal,
+  PlayCircle,
+  ClipboardCopy,
+  Monitor,
   Smartphone,
   PlusCircle,
   Sun,
   Moon,
   CheckCircle2,
   Circle,
+  Radio,
 } from 'lucide-react';
 import type { ActiveTab, SystemdServiceStatus, StateSnapshot } from '../types';
 
@@ -46,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'dashboard' as ActiveTab,
       label: 'Dashboard',
-      icon: LayoutDashboard,
+      icon: LayoutGrid,
     },
     {
       id: 'notifications' as ActiveTab,
@@ -57,17 +58,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'media' as ActiveTab,
       label: 'Multimedia control',
-      icon: Music,
+      icon: PlayCircle,
     },
     {
       id: 'clipboard' as ActiveTab,
       label: 'Send clipboard',
-      icon: Share2,
+      icon: ClipboardCopy,
     },
     {
       id: 'settings' as ActiveTab,
       label: 'Settings',
-      icon: Settings,
+      icon: SlidersHorizontal,
     },
   ];
 
@@ -87,11 +88,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
         >
           <div
-            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-              isDark ? 'bg-white/[0.06] text-white' : 'bg-[#e7ded6] text-[#211c19]'
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+              isDark ? 'bg-white text-zinc-900' : 'bg-[#211c19] text-white'
             }`}
           >
-            <Laptop className="w-5 h-5 stroke-[1.8]" />
+            <Radio className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-base font-bold tracking-tight truncate leading-tight">
@@ -124,8 +125,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isDark ? 'text-zinc-300' : 'text-[#443e39]'
               }`}
             >
-              <Laptop className="w-4 h-4 stroke-[1.8] shrink-0 opacity-70" />
-              <span className="truncate flex-1">{hostName}</span>
+              <Monitor className="w-4 h-4 stroke-[2] shrink-0 opacity-80" />
+              <span className="truncate flex-1 font-semibold">{hostName}</span>
               <span className="w-2 h-2 rounded-full bg-emerald-500" title="This Device" />
             </div>
 
@@ -136,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={peer.id}
                   onClick={() => onTabChange('dashboard')}
-                  className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
+                  className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left outline-none ${
                     isSelected
                       ? isDark
                         ? 'bg-[#333340] text-white shadow-xs'
@@ -146,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : 'text-[#443e39] hover:bg-black/[0.04]'
                   }`}
                 >
-                  <Smartphone className="w-4 h-4 stroke-[1.8] shrink-0" />
+                  <Smartphone className="w-4 h-4 stroke-[2] shrink-0" />
                   <span className="truncate flex-1">{peer.name}</span>
                   {peer.online ? (
                     <span className="text-[10px] text-emerald-500 font-bold">Online</span>
@@ -160,13 +161,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Pair New Device Action */}
             <button
               onClick={onOpenPairing}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left outline-none border border-transparent hover:border-black/5 dark:hover:border-white/5 active:scale-[0.98] ${
                 isDark
-                  ? 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-zinc-300 hover:text-white hover:bg-white/[0.05]'
                   : 'text-[#443e39] hover:text-[#211c19] hover:bg-black/[0.04]'
               }`}
             >
-              <PlusCircle className="w-4 h-4 stroke-[1.8] shrink-0" />
+              <PlusCircle className="w-4 h-4 stroke-[2] shrink-0 text-amber-600 dark:text-amber-400" />
               <span>Pair new device</span>
             </button>
           </div>
@@ -196,18 +197,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer outline-none ${
                   isActive
                     ? isDark
-                      ? 'bg-white/[0.08] text-white font-semibold'
-                      : 'bg-[#e9dfd6] text-[#211c19] font-semibold'
+                      ? 'bg-white/[0.1] text-white font-bold'
+                      : 'bg-[#e9dfd6] text-[#211c19] font-bold'
                     : isDark
                     ? 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
                     : 'text-[#615a54] hover:text-[#211c19] hover:bg-black/[0.03]'
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className="w-4 h-4 stroke-[1.8]" />
+                  <Icon className="w-4 h-4 stroke-[2]" />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
@@ -235,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <button
           onClick={onToggleTheme}
-          className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+          className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer outline-none ${
             isDark
               ? 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               : 'text-[#615a54] hover:text-[#211c19] hover:bg-black/[0.04]'
@@ -244,9 +245,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center space-x-2.5">
             {isDark ? (
-              <Moon className="w-4 h-4 stroke-[1.8]" />
+              <Moon className="w-4 h-4 stroke-[2]" />
             ) : (
-              <Sun className="w-4 h-4 stroke-[1.8]" />
+              <Sun className="w-4 h-4 stroke-[2]" />
             )}
             <span>{isDark ? 'Dark Theme' : 'Light Theme'}</span>
           </div>

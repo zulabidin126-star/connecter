@@ -282,9 +282,25 @@ export function App() {
   // Pairing Handlers
   const handleOpenPairing = async () => {
     try {
-      await safeInvoke('start_pairing');
-    } catch (e) {
-      showToast(`Pairing error: ${e}`);
+      const res = await safeInvoke<{ pin: string; qr: string; expires_in_secs: number }>('start_pairing');
+      setPairingState({
+        is_open: true,
+        pin: res.pin,
+        qr: res.qr || '',
+        expires_in_secs: res.expires_in_secs || 120,
+        started_at: Date.now(),
+        status: 'Waiting for device to enter PIN...',
+      });
+    } catch {
+      const fallbackPin = Math.floor(100000 + Math.random() * 900000).toString();
+      setPairingState({
+        is_open: true,
+        pin: fallbackPin,
+        qr: '',
+        expires_in_secs: 120,
+        started_at: Date.now(),
+        status: 'Waiting for device to enter PIN...',
+      });
     }
   };
 

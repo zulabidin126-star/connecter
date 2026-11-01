@@ -90,6 +90,12 @@ pub enum IpcResponse {
     Ok { status: String },
     State(StateSnapshot),
     Peers(Vec<PeerInfo>),
+    PairPin {
+        status: String,
+        pin: String,
+        qr: String,
+        expires_in_secs: u64,
+    },
     Error { status: String, message: String },
 }
 

@@ -133,7 +133,12 @@ async fn handle_ipc_client(
                                     expires_in_secs: 120,
                                 };
                                 let _ = event_tx.send(event);
-                                send_json_line(&mut writer, &IpcResponse::success()).await;
+                                send_json_line(&mut writer, &IpcResponse::PairPin {
+                                    status: "ok".into(),
+                                    pin,
+                                    qr,
+                                    expires_in_secs: 120,
+                                }).await;
                             }
                             Ok(IpcRequest::PairCancel) => {
                                 {

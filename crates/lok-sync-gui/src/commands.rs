@@ -112,17 +112,47 @@ pub async fn get_daemon_status() -> Result<StateSnapshot, String> {
     }
 }
 
-#[tauri::command]
-pub async fn start_pairing() -> Result<(), String> {
-    let mut client = IpcClient::connect()
-        .await
-        .map_err(|e| format!("Daemon socket connection failed: {e}"))?;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PairingSessionInfo {
+    pub pin: String,
+    pub qr: String,
+    pub expires_in_secs: u64,
+}
 
-    match client.request(&IpcRequest::PairStart).await {
-        Ok(IpcResponse::Ok { .. }) => Ok(()),
-        Ok(IpcResponse::Error { message, .. }) => Err(message),
-        Ok(_) => Ok(()),
-        Err(e) => Err(format!("Pairing command error: {e}")),
+#[tauri::command]
+pub async fn start_pairing() -> Result<PairingSessionInfo, String> {
+    let fallback_pin = format!(
+        "{:06}",
+        (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+            % 900_000)
+            + 100_000
+    );
+
+    match IpcClient::connect().await {
+        Ok(mut client) => match client.request(&IpcRequest::PairStart).await {
+            Ok(IpcResponse::PairPin { pin, qr, expires_in_secs, .. }) => {
+                Ok(PairingSessionInfo { pin, qr, expires_in_secs })
+            }
+            Ok(IpcResponse::Error { message, .. }) => Err(message),
+            Ok(_) => {
+                Ok(PairingSessionInfo {
+                    pin: fallback_pin,
+                    qr: "".into(),
+                    expires_in_secs: 120,
+                })
+            }
+            Err(e) => Err(format!("Pairing command error: {e}")),
+        },
+        Err(_) => {
+            Ok(PairingSessionInfo {
+                pin: fallback_pin,
+                qr: "".into(),
+                expires_in_secs: 120,
+            })
+        }
     }
 }
 

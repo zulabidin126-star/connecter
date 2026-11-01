@@ -9,6 +9,7 @@ import {
   Volume2,
   RefreshCw,
   Radio,
+  Disc,
 } from 'lucide-react';
 import type { MediaPlayerInfo } from '../types';
 
@@ -27,10 +28,9 @@ export const MediaController: React.FC<MediaControllerProps> = ({
 }) => {
   const isDark = theme === 'dark';
   const isPlaying = mediaInfo?.status.toLowerCase() === 'playing';
-  const hasMedia = mediaInfo && mediaInfo.title !== 'No Media Playing' && mediaInfo.title.trim() !== '';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.07]">
         <div>
@@ -46,7 +46,7 @@ export const MediaController: React.FC<MediaControllerProps> = ({
 
         <button
           onClick={onRefresh}
-          className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+          className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer outline-none ${
             isDark
               ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
               : 'border-black/10 hover:bg-black/[0.04] text-[#615a54]'
@@ -58,26 +58,37 @@ export const MediaController: React.FC<MediaControllerProps> = ({
         </button>
       </div>
 
-      {/* Main Player Card - Clean, Human, Native */}
-      <div className="kde-card p-8">
-        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-          {/* Album artwork / Music Tile */}
+      {/* Main Player Card - Professional, High-End Design */}
+      <div className="kde-card p-6 sm:p-8 overflow-hidden">
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+          {/* Professional Vinyl / Sleeve Artwork Tile */}
           <div
-            className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
+            className={`w-28 h-28 sm:w-36 sm:h-36 rounded-2xl flex items-center justify-center shrink-0 border relative overflow-hidden shadow-sm ${
               isDark
-                ? 'bg-white/[0.04] border-white/[0.08] text-white'
-                : 'bg-[#f4ebe4] border-black/[0.06] text-[#211c19]'
+                ? 'bg-[#18181f] border-white/10 text-white'
+                : 'bg-[#ede3da] border-black/10 text-[#211c19]'
             }`}
           >
-            <Music className="w-12 h-12 stroke-[1.6] opacity-80" />
+            {/* Vinyl record concentric ring effect */}
+            <div className="absolute inset-2 rounded-full border border-black/5 dark:border-white/5 opacity-50" />
+            <div className="absolute inset-5 rounded-full border border-black/5 dark:border-white/5 opacity-40" />
+            <div className="absolute inset-8 rounded-full border border-black/5 dark:border-white/5 opacity-30" />
+
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-inner ${
+                isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-stone-200 text-stone-800'
+              }`}
+            >
+              <Disc className={`w-7 h-7 stroke-[2] ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+            </div>
           </div>
 
-          {/* Details & Controls */}
-          <div className="flex-1 min-w-0 text-center sm:text-left space-y-4">
+          {/* Details & Responsive Controls */}
+          <div className="flex-1 min-w-0 w-full text-center md:text-left space-y-4">
             <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
                 <span
-                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                     isPlaying
                       ? 'bg-emerald-500/15 text-emerald-500'
                       : 'bg-zinc-500/15 text-zinc-400'
@@ -87,48 +98,47 @@ export const MediaController: React.FC<MediaControllerProps> = ({
                 </span>
                 {mediaInfo?.player_name && (
                   <span
-                    className={`text-xs font-medium flex items-center gap-1 ${
-                      isDark ? 'text-zinc-400' : 'text-[#615a54]'
+                    className={`text-xs font-semibold flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${
+                      isDark ? 'bg-white/[0.06] text-zinc-300' : 'bg-black/[0.05] text-[#443e39]'
                     }`}
                   >
-                    <Radio className="w-3 h-3" />
+                    <Radio className="w-3 h-3 text-sky-500" />
                     <span>{mediaInfo.player_name}</span>
                   </span>
                 )}
               </div>
 
-              <h3 className="text-xl font-bold tracking-tight truncate">
+              <h3 className="text-lg sm:text-xl font-bold tracking-tight truncate leading-snug">
                 {mediaInfo?.title || 'No Media Playing'}
               </h3>
               <p
-                className={`text-sm mt-0.5 font-medium truncate ${
+                className={`text-xs sm:text-sm mt-0.5 font-medium truncate ${
                   isDark ? 'text-zinc-400' : 'text-[#615a54]'
                 }`}
               >
                 {mediaInfo?.artist && mediaInfo.artist !== 'None'
                   ? mediaInfo.artist
-                  : 'Start playing music or video on your system'}
+                  : 'Start audio or video in browser or player'}
               </p>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-center sm:justify-start space-x-3 pt-1">
+            {/* Playback Controls Toolbar - Flexible & Non-Clipping */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-1">
               <button
                 onClick={() => onControl('previous')}
-                disabled={!hasMedia}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
+                className={`p-3 rounded-xl border transition-all cursor-pointer outline-none shadow-xs active:scale-95 ${
                   isDark
-                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
-                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
+                    ? 'border-white/10 hover:bg-white/[0.08] text-zinc-200'
+                    : 'border-black/10 hover:bg-black/[0.06] text-[#211c19]'
                 }`}
-                title="Previous"
+                title="Previous Track"
               >
-                <SkipBack className="w-5 h-5 stroke-[1.8]" />
+                <SkipBack className="w-5 h-5 fill-current" />
               </button>
 
               <button
                 onClick={() => onControl('play-pause')}
-                className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-xs ${
+                className={`px-5 py-3 rounded-xl transition-all cursor-pointer outline-none shadow-sm flex items-center justify-center active:scale-95 ${
                   isDark
                     ? 'bg-white text-zinc-900 hover:bg-zinc-200'
                     : 'bg-[#211c19] text-white hover:bg-[#38302c]'
@@ -144,44 +154,42 @@ export const MediaController: React.FC<MediaControllerProps> = ({
 
               <button
                 onClick={() => onControl('next')}
-                disabled={!hasMedia}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
+                className={`p-3 rounded-xl border transition-all cursor-pointer outline-none shadow-xs active:scale-95 ${
                   isDark
-                    ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
-                    : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
+                    ? 'border-white/10 hover:bg-white/[0.08] text-zinc-200'
+                    : 'border-black/10 hover:bg-black/[0.06] text-[#211c19]'
                 }`}
-                title="Next"
+                title="Next Track"
               >
-                <SkipForward className="w-5 h-5 stroke-[1.8]" />
+                <SkipForward className="w-5 h-5 fill-current" />
               </button>
 
               <button
                 onClick={() => onControl('stop')}
-                disabled={!hasMedia}
-                className={`p-2.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-30 ${
+                className={`p-3 rounded-xl border transition-all cursor-pointer outline-none shadow-xs active:scale-95 ${
                   isDark
-                    ? 'border-white/10 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400'
+                    ? 'border-white/10 hover:bg-rose-500/15 text-zinc-400 hover:text-rose-400'
                     : 'border-black/10 hover:bg-rose-50 text-[#615a54] hover:text-rose-600'
                 }`}
-                title="Stop"
+                title="Stop Playback"
               >
                 <Square className="w-4 h-4 fill-current" />
               </button>
             </div>
 
-            {/* Volume control */}
-            <div className="flex items-center justify-center sm:justify-start space-x-2 pt-2">
+            {/* Quick Volume Steppers */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.04]">
               <span
-                className={`text-xs font-semibold flex items-center gap-1.5 ${
+                className={`text-xs font-semibold flex items-center gap-1.5 mr-1 ${
                   isDark ? 'text-zinc-400' : 'text-[#615a54]'
                 }`}
               >
-                <Volume2 className="w-3.5 h-3.5" />
+                <Volume2 className="w-4 h-4" />
                 <span>Volume:</span>
               </span>
               <button
                 onClick={() => onControl('volume-down')}
-                className={`px-3 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer outline-none active:scale-95 ${
                   isDark
                     ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
                     : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
@@ -191,7 +199,7 @@ export const MediaController: React.FC<MediaControllerProps> = ({
               </button>
               <button
                 onClick={() => onControl('volume-up')}
-                className={`px-3 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer outline-none active:scale-95 ${
                   isDark
                     ? 'border-white/10 hover:bg-white/[0.06] text-zinc-300'
                     : 'border-black/10 hover:bg-black/[0.04] text-[#211c19]'
@@ -206,13 +214,16 @@ export const MediaController: React.FC<MediaControllerProps> = ({
 
       {/* Info Card */}
       <div className="kde-card p-5">
-        <h4 className="text-xs font-bold mb-1">Universal MPRIS Support</h4>
+        <h4 className="text-xs font-bold mb-1 flex items-center gap-1.5">
+          <Music className="w-3.5 h-3.5" />
+          <span>Universal MPRIS Media Bridge</span>
+        </h4>
         <p
           className={`text-xs font-medium leading-relaxed ${
             isDark ? 'text-zinc-400' : 'text-[#615a54]'
           }`}
         >
-          Compatible with all standard Linux media players including Spotify, Firefox, Chrome, Brave, VLC, mpv, and Rhythmbox. Volume commands interface cleanly with PipeWire (<code className="font-mono text-[11px]">wpctl</code>) and PulseAudio (<code className="font-mono text-[11px]">pactl</code>).
+          Directly controls Spotify, Brave, Firefox, Chrome, VLC, mpv, and system audio volume via PipeWire (<code className="font-mono text-[11px]">wpctl</code>) and PulseAudio.
         </p>
       </div>
     </div>
