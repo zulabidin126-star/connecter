@@ -50,6 +50,7 @@ export interface GuiSettings {
   forward_laptop_to_phone: boolean;
   device_name: string;
   port: number;
+  theme?: 'dark' | 'light';
 }
 
 export interface MediaPlayerInfo {

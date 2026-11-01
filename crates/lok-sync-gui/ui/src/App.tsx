@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS: GuiSettings = {
   forward_laptop_to_phone: true,
   device_name: 'Linux-Host',
   port: 47100,
+  theme: 'dark',
 };
 
 const DEFAULT_MEDIA: MediaPlayerInfo = {
@@ -42,7 +43,7 @@ const DEFAULT_SYSTEMD: SystemdServiceStatus = {
   status_text: 'Inactive',
 };
 
-// Safe invoke wrapper that doesn't crash if running in browser
+// Safe invoke wrapper
 async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   try {
     return await invoke<T>(cmd, args);
@@ -61,6 +62,28 @@ export function App() {
   const [notifications, setNotifications] = useState<SyncedNotification[]>([]);
   const [settings, setSettings] = useState<GuiSettings>(DEFAULT_SETTINGS);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Theme state: dark | light (persisted in localStorage)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('lok-sync-theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('lok-sync-theme', next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
 
   const [pairingState, setPairingState] = useState<PairingState>({
     is_open: false,
@@ -296,16 +319,22 @@ export function App() {
     showToast('Settings saved');
   };
 
+  const isDark = theme === 'dark';
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden ambient-bg text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-white">
+    <div
+      className={`flex h-screen w-screen overflow-hidden font-sans transition-colors duration-300 ${
+        isDark ? 'ambient-bg-dark text-slate-100' : 'ambient-bg-light text-slate-800'
+      }`}
+    >
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-600 text-white text-xs font-bold shadow-2xl shadow-indigo-600/40 backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-600 text-white text-xs font-bold shadow-2xl shadow-indigo-600/40 backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {toast}
         </div>
       )}
 
-      {/* Navigation Sidebar */}
+      {/* Navigation Sidebar with Theme Switcher */}
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -313,6 +342,8 @@ export function App() {
         systemdStatus={systemdStatus}
         notificationCount={notifications.length}
         pairedCount={snapshot?.peers.length || 0}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main View Area */}
@@ -323,6 +354,7 @@ export function App() {
               snapshot={snapshot}
               mediaInfo={mediaInfo}
               systemdStatus={systemdStatus}
+              theme={theme}
               onOpenPairing={handleOpenPairing}
               onUnpair={handleUnpair}
               onMediaControl={handleMediaControl}
@@ -334,6 +366,7 @@ export function App() {
             <NotificationsHub
               notifications={notifications}
               settings={settings}
+              theme={theme}
               onClear={handleClearNotifications}
               onUpdateSettings={handleUpdateSettings}
               onSendTestNotification={handleSendTestNotification}
@@ -343,6 +376,7 @@ export function App() {
           {activeTab === 'media' && (
             <MediaController
               mediaInfo={mediaInfo}
+              theme={theme}
               onControl={handleMediaControl}
               onRefresh={refreshMedia}
             />
@@ -352,6 +386,7 @@ export function App() {
             <ClipboardView
               currentClipboard={clipboardContent}
               peers={snapshot?.peers || []}
+              theme={theme}
               onRefreshClipboard={refreshClipboard}
               onSetClipboard={handleSetClipboard}
               onSendToPhone={handleSendToPhone}
@@ -362,6 +397,8 @@ export function App() {
             <SettingsView
               settings={settings}
               systemdStatus={systemdStatus}
+              theme={theme}
+              onToggleTheme={toggleTheme}
               onUpdateSettings={handleUpdateSettings}
               onManageSystemd={handleManageSystemd}
             />
@@ -373,6 +410,7 @@ export function App() {
       {pairingState.is_open && (
         <PairingModal
           pairingState={pairingState}
+          theme={theme}
           onCancel={handleCancelPairing}
         />
       )}
