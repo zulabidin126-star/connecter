@@ -1,16 +1,16 @@
 [Unit]
-Description=LokSync tray
+Description=LokSync GUI tray
 After=lok-sync.service graphical-session.target
 PartOf=graphical-session.target
 Requires=lok-sync.service
 
 [Service]
-ExecStart=/usr/bin/lok-sync-gui --tray
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin:%h/.nix-profile/bin:/run/current-system/sw/bin"
+ExecStart=%h/.local/bin/lok-sync-gui
 Slice=lok-sync.slice
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=yes
-ProtectSystem=strict
 PrivateTmp=yes
 
 [Install]

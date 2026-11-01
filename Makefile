@@ -33,6 +33,27 @@ install: release
 	install -d $(DESTDIR)/etc/lok-sync
 	install -m 644 dist/config.toml $(DESTDIR)/etc/lok-sync/config.toml
 
+install-user: release
+	install -d $(HOME)/.local/bin
+	install -m 755 target/release/lok-sync-d $(HOME)/.local/bin/lok-sync-d
+	install -m 755 target/release/lok-sync-gui $(HOME)/.local/bin/lok-sync-gui
+	install -d $(HOME)/.config/systemd/user
+	install -m 644 dist/systemd/lok-sync.service $(HOME)/.config/systemd/user/lok-sync.service
+	install -m 644 dist/systemd/lok-sync.slice $(HOME)/.config/systemd/user/lok-sync.slice
+	install -m 644 dist/systemd/lok-sync-gui.service $(HOME)/.config/systemd/user/lok-sync-gui.service
+	install -d $(HOME)/.local/share/applications
+	install -m 644 dist/desktop/lok-sync-gui.desktop $(HOME)/.local/share/applications/lok-sync-gui.desktop
+	systemctl --user daemon-reload || true
+
+uninstall-user:
+	rm -f $(HOME)/.local/bin/lok-sync-d
+	rm -f $(HOME)/.local/bin/lok-sync-gui
+	rm -f $(HOME)/.config/systemd/user/lok-sync.service
+	rm -f $(HOME)/.config/systemd/user/lok-sync.slice
+	rm -f $(HOME)/.config/systemd/user/lok-sync-gui.service
+	rm -f $(HOME)/.local/share/applications/lok-sync-gui.desktop
+	systemctl --user daemon-reload || true
+
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/lok-sync-d
 	rm -f $(DESTDIR)$(PREFIX)/bin/lok-sync-gui

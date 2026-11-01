@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { NotificationsHub } from './components/NotificationsHub';
+import { MediaController } from './components/MediaController';
+import { ClipboardView } from './components/ClipboardView';
 import { SettingsView } from './components/SettingsView';
 import { PairingModal } from './components/PairingModal';
 import type {
@@ -10,6 +12,8 @@ import type {
   SyncedNotification,
   PairingState,
   GuiSettings,
+  MediaPlayerInfo,
+  SystemdServiceStatus,
 } from './types';
 
 // Tauri invoke and listen helpers (safe fallback if opened in browser)
@@ -28,7 +32,7 @@ try {
     tauriListen = event.listen;
   }
 } catch {
-  // running in browser / dev mode
+  // running in browser / mock mode
 }
 
 const DEFAULT_SNAPSHOT: StateSnapshot = {
@@ -48,13 +52,31 @@ const DEFAULT_SETTINGS: GuiSettings = {
   autostart: true,
   plain_text_only: true,
   hide_body_when_locked: true,
+  forward_laptop_to_phone: true,
   device_name: 'Linux-Machine',
   port: 47100,
+};
+
+const DEFAULT_MEDIA: MediaPlayerInfo = {
+  title: 'No Media Playing',
+  artist: 'None',
+  album: '',
+  status: 'Stopped',
+  player_name: 'MPRIS',
+};
+
+const DEFAULT_SYSTEMD: SystemdServiceStatus = {
+  active: false,
+  enabled: true,
+  status_text: 'Inactive',
 };
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [snapshot, setSnapshot] = useState<StateSnapshot | null>(DEFAULT_SNAPSHOT);
+  const [mediaInfo, setMediaInfo] = useState<MediaPlayerInfo | null>(DEFAULT_MEDIA);
+  const [systemdStatus, setSystemdStatus] = useState<SystemdServiceStatus | null>(DEFAULT_SYSTEMD);
+  const [clipboardContent, setClipboardContent] = useState<string>('');
   const [isConnected, setIsConnected] = useState(true);
   const [notifications, setNotifications] = useState<SyncedNotification[]>([]);
   const [settings, setSettings] = useState<GuiSettings>(DEFAULT_SETTINGS);
@@ -86,14 +108,56 @@ export function App() {
     }
   }, []);
 
-  // Initial load and polling fallback
+  // Fetch media status via MPRIS
+  const refreshMedia = useCallback(async () => {
+    if (!tauriInvoke) return;
+    try {
+      const media = await tauriInvoke<MediaPlayerInfo>('get_media_status');
+      setMediaInfo(media);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Fetch systemd user service status
+  const refreshSystemd = useCallback(async () => {
+    if (!tauriInvoke) return;
+    try {
+      const status = await tauriInvoke<SystemdServiceStatus>('get_systemd_status');
+      setSystemdStatus(status);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Fetch current Linux clipboard content
+  const refreshClipboard = useCallback(async () => {
+    if (!tauriInvoke) return;
+    try {
+      const text = await tauriInvoke<string>('get_clipboard_content');
+      setClipboardContent(text);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Initial load and periodic polling
   useEffect(() => {
     refreshStatus();
-    const interval = setInterval(refreshStatus, 3000);
-    return () => clearInterval(interval);
-  }, [refreshStatus]);
+    refreshMedia();
+    refreshSystemd();
+    refreshClipboard();
 
-  // Real-time Tauri event listener
+    const interval = setInterval(() => {
+      refreshStatus();
+      refreshMedia();
+      refreshSystemd();
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [refreshStatus, refreshMedia, refreshSystemd, refreshClipboard]);
+
+  // Real-time Tauri event listener from IPC Unix socket
   useEffect(() => {
     if (!tauriListen) return;
 
@@ -104,7 +168,7 @@ export function App() {
         refreshStatus();
       } else if (payload.type === 'PeerOnline') {
         refreshStatus();
-        showToast('New peer device connected');
+        showToast('New peer mobile device connected');
       } else if (payload.type === 'PeerOffline') {
         refreshStatus();
       } else if (payload.type === 'PairPin') {
@@ -135,6 +199,7 @@ export function App() {
             peer_name: notif.peer_name || 'Phone',
             time_str: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             received_at: Date.now(),
+            direction: 'phone_to_laptop',
           },
           ...prev,
         ]);
@@ -148,7 +213,86 @@ export function App() {
     };
   }, [refreshStatus, showToast]);
 
-  // Handlers
+  // Media controls handler
+  const handleMediaControl = async (action: string) => {
+    if (tauriInvoke) {
+      try {
+        await tauriInvoke('media_control', { action });
+        setTimeout(refreshMedia, 200);
+      } catch (e) {
+        showToast(`Media error: ${e}`);
+      }
+    } else {
+      showToast(`Media action: ${action}`);
+    }
+  };
+
+  // Systemd service manager handler
+  const handleManageSystemd = async (action: string) => {
+    if (tauriInvoke) {
+      try {
+        const msg = await tauriInvoke<string>('manage_systemd_service', { action });
+        showToast(msg);
+        setTimeout(() => {
+          refreshSystemd();
+          refreshStatus();
+        }, 600);
+      } catch (e) {
+        showToast(`Service error: ${e}`);
+      }
+    } else {
+      showToast(`Systemd action: ${action}`);
+    }
+  };
+
+  // Clipboard handler
+  const handleSetClipboard = async (text: string) => {
+    if (tauriInvoke) {
+      try {
+        await tauriInvoke('set_clipboard_content', { text });
+        setClipboardContent(text);
+        showToast('Copied to system clipboard');
+      } catch (e) {
+        showToast(`Clipboard error: ${e}`);
+      }
+    } else {
+      setClipboardContent(text);
+      showToast('Copied to system clipboard');
+    }
+  };
+
+  // Push note / link to mobile device
+  const handleSendToPhone = async (text: string) => {
+    if (tauriInvoke) {
+      try {
+        await tauriInvoke('send_test_notification', {
+          title: 'Clipboard from Laptop',
+          body: text,
+        });
+        showToast('Shared with mobile device!');
+      } catch (e) {
+        showToast(`Send error: ${e}`);
+      }
+    } else {
+      showToast('Shared with mobile device!');
+    }
+  };
+
+  // Send test desktop notification
+  const handleSendTestNotification = async (title: string, body: string) => {
+    if (tauriInvoke) {
+      try {
+        await tauriInvoke('send_test_notification', { title, body });
+        showToast('Test notification triggered!');
+      } catch (e) {
+        showToast(`Notification error: ${e}`);
+      }
+    } else {
+      showToast(`Notification sent: ${title}`);
+    }
+  };
+
+  // Pairing Handlers
   const handleOpenPairing = async () => {
     if (tauriInvoke) {
       try {
@@ -157,7 +301,6 @@ export function App() {
         showToast(`Pairing error: ${e}`);
       }
     } else {
-      // Mock for browser testing
       setPairingState({
         is_open: true,
         pin: '739214',
@@ -226,6 +369,7 @@ export function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isConnected={isConnected}
+        systemdStatus={systemdStatus}
         notificationCount={notifications.length}
         pairedCount={snapshot?.peers.length || 0}
       />
@@ -236,22 +380,49 @@ export function App() {
           {activeTab === 'dashboard' && (
             <Dashboard
               snapshot={snapshot}
+              mediaInfo={mediaInfo}
+              systemdStatus={systemdStatus}
               onOpenPairing={handleOpenPairing}
               onUnpair={handleUnpair}
+              onMediaControl={handleMediaControl}
+              onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
 
           {activeTab === 'notifications' && (
             <NotificationsHub
               notifications={notifications}
+              settings={settings}
               onClear={handleClearNotifications}
+              onUpdateSettings={handleUpdateSettings}
+              onSendTestNotification={handleSendTestNotification}
+            />
+          )}
+
+          {activeTab === 'media' && (
+            <MediaController
+              mediaInfo={mediaInfo}
+              onControl={handleMediaControl}
+              onRefresh={refreshMedia}
+            />
+          )}
+
+          {activeTab === 'clipboard' && (
+            <ClipboardView
+              currentClipboard={clipboardContent}
+              peers={snapshot?.peers || []}
+              onRefreshClipboard={refreshClipboard}
+              onSetClipboard={handleSetClipboard}
+              onSendToPhone={handleSendToPhone}
             />
           )}
 
           {activeTab === 'settings' && (
             <SettingsView
               settings={settings}
+              systemdStatus={systemdStatus}
               onUpdateSettings={handleUpdateSettings}
+              onManageSystemd={handleManageSystemd}
             />
           )}
         </div>

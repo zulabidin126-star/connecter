@@ -36,6 +36,7 @@ export interface SyncedNotification {
   peer_name: string;
   time_str: string;
   received_at: number;
+  direction?: 'phone_to_laptop' | 'laptop_to_phone';
 }
 
 export interface PairingState {
@@ -51,8 +52,23 @@ export interface GuiSettings {
   autostart: boolean;
   plain_text_only: boolean;
   hide_body_when_locked: boolean;
+  forward_laptop_to_phone: boolean;
   device_name: string;
   port: number;
 }
 
-export type ActiveTab = 'dashboard' | 'notifications' | 'settings';
+export interface MediaPlayerInfo {
+  title: string;
+  artist: string;
+  album: string;
+  status: string; // "Playing" | "Paused" | "Stopped"
+  player_name: string;
+}
+
+export interface SystemdServiceStatus {
+  active: boolean;
+  enabled: boolean;
+  status_text: string;
+}
+
+export type ActiveTab = 'dashboard' | 'notifications' | 'media' | 'clipboard' | 'settings';

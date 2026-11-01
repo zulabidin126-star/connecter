@@ -8,9 +8,13 @@ StartLimitBurst=5
 
 [Service]
 Type=notify
-NotifyAccess=main
-ExecStart=/usr/bin/lok-sync-d --config %E/lok-sync/config.toml
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin:%h/.nix-profile/bin:/run/current-system/sw/bin"
+ExecStart=%h/.local/bin/lok-sync-d
 ExecReload=/bin/kill -HUP $MAINPID
+
+# Automatically ensure runtime and state directories exist
+RuntimeDirectory=lok-sync
+StateDirectory=lok-sync
 
 # --- Self-healing ---
 Restart=on-failure
@@ -26,30 +30,12 @@ CPUQuota=10%
 TasksMax=32
 LimitNOFILE=256
 Nice=10
-IOWeight=20
 
-# --- Hardening ---
+# --- Hardening compatible with systemd user session ---
 NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=%S/lok-sync %t/lok-sync
-ProtectKernelTunables=yes
-ProtectKernelModules=yes
-ProtectKernelLogs=yes
-ProtectControlGroups=yes
-ProtectClock=yes
-ProtectHostname=yes
-RestrictNamespaces=yes
-RestrictRealtime=yes
 RestrictSUIDSGID=yes
 LockPersonality=yes
-MemoryDenyWriteExecute=yes
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
-SystemCallArchitectures=native
-SystemCallFilter=@system-service
-SystemCallFilter=~@privileged @resources @mount @swap @reboot @debug
-CapabilityBoundingSet=
 UMask=0077
 
 [Install]

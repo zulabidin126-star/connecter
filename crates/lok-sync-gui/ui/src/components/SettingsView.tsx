@@ -6,17 +6,26 @@ import {
   Smartphone,
   EyeOff,
   Sliders,
+  Play,
+  Square,
+  RotateCw,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
-import type { GuiSettings } from '../types';
+import type { GuiSettings, SystemdServiceStatus } from '../types';
 
 interface SettingsViewProps {
   settings: GuiSettings;
+  systemdStatus: SystemdServiceStatus | null;
   onUpdateSettings: (newSettings: Partial<GuiSettings>) => void;
+  onManageSystemd: (action: string) => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
+  systemdStatus,
   onUpdateSettings,
+  onManageSystemd,
 }) => {
   return (
     <div className="space-y-6 max-w-4xl">
@@ -26,11 +35,93 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <span>Settings & Configuration</span>
         </h2>
         <p className="text-sm text-slate-400 mt-1">
-          Customize device privacy, background services, and end-to-end encryption.
+          Manage systemd background service, device privacy, and end-to-end encryption.
         </p>
       </div>
 
       <div className="space-y-5">
+        {/* Systemd Service Lifecycle Management */}
+        <div className="glass-panel p-6 rounded-2xl glow-card space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                <Server className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Systemd User Service: lok-sync.service</span>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                      systemdStatus?.active
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    }`}
+                  >
+                    {systemdStatus?.active ? 'Active (Running)' : 'Inactive (Stopped)'}
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Runs the ultra-lightweight Rust daemon in background under <code>lok-sync.slice</code> (16 MB cap).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {systemdStatus?.active ? (
+                <button
+                  onClick={() => onManageSystemd('stop')}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                  <span>Stop Service</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onManageSystemd('start')}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Start Service</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => onManageSystemd('restart')}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-medium transition-colors cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Restart</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Autostart toggle */}
+          <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2 text-xs">
+              {systemdStatus?.enabled ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-slate-500" />
+              )}
+              <span className="text-slate-300">
+                Login Autostart: <strong className="text-white">{systemdStatus?.enabled ? 'Enabled' : 'Disabled'}</strong>
+              </span>
+            </div>
+
+            <button
+              onClick={() => onManageSystemd(systemdStatus?.enabled ? 'disable' : 'enable')}
+              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-200 border border-white/10 transition-colors cursor-pointer w-fit"
+            >
+              {systemdStatus?.enabled ? 'Disable Autostart' : 'Enable Autostart on Login'}
+            </button>
+          </div>
+
+          <div className="p-3 rounded-xl bg-black/30 border border-white/5 text-[11px] font-mono text-slate-400 space-y-1">
+            <p className="text-slate-500"># Check logs anytime with systemd:</p>
+            <p className="text-indigo-300">journalctl --user -u lok-sync.service -f</p>
+          </div>
+        </div>
+
         {/* Device Naming & Identity */}
         <div className="glass-panel p-5 rounded-2xl glow-card">
           <div className="flex items-center space-x-3 mb-4">
@@ -55,38 +146,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => onUpdateSettings({ device_name: e.target.value })}
               className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors w-64"
             />
-          </div>
-        </div>
-
-        {/* System Integration */}
-        <div className="glass-panel p-5 rounded-2xl glow-card">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-              <Server className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">System Integration</h3>
-              <p className="text-xs text-slate-400">
-                Manage background daemon systemd lifecycle on login.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.autostart}
-                onChange={(e) => onUpdateSettings({ autostart: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
-              />
-              <span className="text-xs text-slate-200 font-medium">
-                Start LokSync daemon on login (systemd user unit: lok-sync.service)
-              </span>
-            </label>
-            <p className="text-[11px] text-slate-500 pl-7">
-              Automatically launches inside a strict systemd resource slice (max 16 MB RSS limit).
-            </p>
           </div>
         </div>
 
@@ -129,9 +188,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </span>
             </label>
 
-            <p className="text-[11px] text-slate-500 pl-7">
-              Automatic spam rate limiter active: maximum 10 notifications per 10 seconds.
-            </p>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.forward_laptop_to_phone}
+                onChange={(e) => onUpdateSettings({ forward_laptop_to_phone: e.target.checked })}
+                className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-xs text-slate-200 font-medium">
+                Forward Linux system notifications to connected phone
+              </span>
+            </label>
           </div>
         </div>
 
@@ -189,12 +256,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <span className="text-slate-400">loginctl lock-session</span>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-black/30 border border-white/5">
-              <span className="text-indigo-300">volume-up</span>
-              <span className="text-slate-400">wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+</span>
+              <span className="text-indigo-300">volume-up / volume-down</span>
+              <span className="text-slate-400">wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+/-</span>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-black/30 border border-white/5">
-              <span className="text-indigo-300">play-pause</span>
-              <span className="text-slate-400">playerctl play-pause</span>
+              <span className="text-indigo-300">play-pause / next / previous</span>
+              <span className="text-slate-400">playerctl [action]</span>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-black/30 border border-white/5">
               <span className="text-indigo-300">suspend</span>

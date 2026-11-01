@@ -14,6 +14,13 @@ pub fn run_tauri_app() -> Result<(), Box<dyn std::error::Error>> {
             commands::cancel_pairing,
             commands::unpair_peer,
             commands::update_settings,
+            commands::get_media_status,
+            commands::media_control,
+            commands::send_test_notification,
+            commands::get_systemd_status,
+            commands::manage_systemd_service,
+            commands::get_clipboard_content,
+            commands::set_clipboard_content,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

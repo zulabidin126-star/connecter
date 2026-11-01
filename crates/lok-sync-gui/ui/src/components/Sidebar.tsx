@@ -1,11 +1,20 @@
 import React from 'react';
-import { LayoutDashboard, Bell, Settings, Radio, Smartphone } from 'lucide-react';
-import type { ActiveTab } from '../types';
+import {
+  LayoutDashboard,
+  Bell,
+  Settings,
+  Radio,
+  Music,
+  Clipboard,
+  Cpu,
+} from 'lucide-react';
+import type { ActiveTab, SystemdServiceStatus } from '../types';
 
 interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   isConnected: boolean;
+  systemdStatus: SystemdServiceStatus | null;
   notificationCount: number;
   pairedCount: number;
 }
@@ -14,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   isConnected,
+  systemdStatus,
   notificationCount,
   pairedCount,
 }) => {
@@ -30,6 +40,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Bell,
       badge: notificationCount > 0 ? `${notificationCount}` : undefined,
       badgeColor: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30',
+    },
+    {
+      id: 'media' as ActiveTab,
+      label: 'Media Player',
+      icon: Music,
+    },
+    {
+      id: 'clipboard' as ActiveTab,
+      label: 'Quick Share',
+      icon: Clipboard,
     },
     {
       id: 'settings' as ActiveTab,
@@ -82,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
@@ -111,16 +131,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-white/5 bg-black/20">
-        <div className="flex items-center space-x-3 px-2 py-1">
-          <Smartphone className="w-4 h-4 text-slate-400" />
-          <div className="text-xs">
-            <p className="text-slate-300 font-medium">IPC Unix Socket</p>
-            <p className="text-[10px] text-slate-500 font-mono truncate max-w-[150px]">
-              ctl.sock
-            </p>
+      {/* Footer Info with Systemd User Service Status */}
+      <div className="p-4 border-t border-white/5 bg-black/20 space-y-2">
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="flex items-center space-x-2">
+            <Cpu className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[11px] text-slate-300 font-medium">lok-sync.service</span>
           </div>
+          <span
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+              systemdStatus?.active
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            }`}
+          >
+            {systemdStatus?.active ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+
+        <div className="px-2 text-[10px] text-slate-500 font-mono truncate">
+          Unix: /run/user/1000/lok-sync/ctl.sock
         </div>
       </div>
     </aside>

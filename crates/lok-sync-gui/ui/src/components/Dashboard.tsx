@@ -3,30 +3,46 @@ import {
   Laptop,
   Smartphone,
   Zap,
-  Radio,
   Plus,
   Trash2,
   CheckCircle2,
   AlertCircle,
   Clock,
-  ShieldCheck,
+  Music,
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Volume2,
+  Cpu,
 } from 'lucide-react';
-import type { StateSnapshot } from '../types';
+import type { StateSnapshot, MediaPlayerInfo, SystemdServiceStatus } from '../types';
 
 interface DashboardProps {
   snapshot: StateSnapshot | null;
+  mediaInfo: MediaPlayerInfo | null;
+  systemdStatus: SystemdServiceStatus | null;
   onOpenPairing: () => void;
   onUnpair: (peerId: string) => void;
+  onMediaControl: (action: string) => Promise<void>;
+  onNavigateTab: (tab: 'media' | 'clipboard' | 'settings') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   snapshot,
+  mediaInfo,
+  systemdStatus,
   onOpenPairing,
   onUnpair,
+  onMediaControl,
+  onNavigateTab,
 }) => {
   const localBat = snapshot?.local_battery;
   const peers = snapshot?.peers || [];
   const primaryPeer = peers.find((p) => p.online) || peers[0];
+
+  const isPlaying = mediaInfo?.status.toLowerCase() === 'playing';
+  const hasMedia = mediaInfo && mediaInfo.title !== 'No Media Playing' && mediaInfo.title.trim() !== '';
 
   const formatLastSeen = (timestamp: number) => {
     if (!timestamp) return 'Never';
@@ -152,34 +168,121 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </p>
         </div>
 
-        {/* Card 3: Connection & Host */}
+        {/* Card 3: Daemon & Systemd Slice */}
         <div className="glass-panel p-5 rounded-2xl glow-card relative overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <Radio className="w-5 h-5" />
+                <Cpu className="w-5 h-5" />
               </div>
-              <span className="text-sm font-semibold text-slate-200">Bridge Status</span>
+              <span className="text-sm font-semibold text-slate-200">Systemd Service</span>
             </div>
-            <span className="inline-flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <ShieldCheck className="w-3 h-3" />
-              <span>SPAKE2 / E2EE</span>
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                systemdStatus?.active
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              }`}
+            >
+              {systemdStatus?.active ? 'Active' : 'Inactive'}
             </span>
           </div>
 
           <div className="space-y-2 mt-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Host Name</span>
-              <span className="text-slate-200 font-medium">{snapshot?.device_name || 'Linux-Machine'}</span>
+              <span className="text-slate-400">Unit Name</span>
+              <span className="text-slate-200 font-mono text-[11px]">lok-sync.service</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">mDNS Service</span>
-              <span className="text-slate-200 font-mono text-[11px]">_loksync._tcp</span>
+              <span className="text-slate-400">Cgroup Slice</span>
+              <span className="text-slate-200 font-mono text-[11px]">lok-sync.slice (16MB)</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Paired Devices</span>
-              <span className="text-indigo-400 font-semibold">{peers.length} active</span>
+              <span className="text-slate-400">Autostart</span>
+              <span className={systemdStatus?.enabled ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                {systemdStatus?.enabled ? 'Enabled on login' : 'Manual'}
+              </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Media Controller Card */}
+      <div className="glass-panel p-5 rounded-2xl glow-card border border-white/5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Music className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Now Playing (MPRIS)</span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                  {mediaInfo?.player_name || 'System Player'}
+                </span>
+              </h3>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigateTab('media')}
+            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors cursor-pointer"
+          >
+            Full Controller &rarr;
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-xl bg-black/20 border border-white/5">
+          <div className="flex items-center space-x-3 truncate w-full sm:w-auto">
+            <div
+              className={`w-10 h-10 rounded-xl bg-indigo-950/60 border border-indigo-500/20 flex items-center justify-center shrink-0 ${
+                isPlaying ? 'ring-1 ring-indigo-400/50' : ''
+              }`}
+            >
+              <Music className={`w-5 h-5 text-indigo-400 ${isPlaying ? 'animate-pulse' : ''}`} />
+            </div>
+            <div className="truncate">
+              <p className="text-xs font-bold text-white truncate max-w-sm">
+                {mediaInfo?.title || 'No Media Playing'}
+              </p>
+              <p className="text-[11px] text-slate-400 truncate max-w-xs">
+                {mediaInfo?.artist && mediaInfo.artist !== 'None' ? mediaInfo.artist : 'Host playback idle'}
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Controls */}
+          <div className="flex items-center space-x-2 shrink-0">
+            <button
+              onClick={() => onMediaControl('previous')}
+              disabled={!hasMedia}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 text-slate-300 transition-colors cursor-pointer"
+              title="Previous"
+            >
+              <SkipBack className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onMediaControl('play-pause')}
+              className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-colors cursor-pointer"
+              title={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => onMediaControl('next')}
+              disabled={!hasMedia}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 text-slate-300 transition-colors cursor-pointer"
+              title="Next"
+            >
+              <SkipForward className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onMediaControl('volume-up')}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors cursor-pointer ml-1"
+              title="Volume +5%"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
