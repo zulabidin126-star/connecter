@@ -1,83 +1,47 @@
 {
-  description = "LokSync — local phone <-> Linux bridge";
+  description = "LokSync Nix Flake Development Environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    (flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in {
-        packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "lok-sync";
-          version = "0.1.0";
-          src = self;
-          cargoLock.lockFile = ./Cargo.lock;
-          cargoBuildFlags = [ "-p" "lok-sync-d" "-p" "lok-sync-gui" ];
-          postInstall = ''
-            install -Dm644 dist/systemd/lok-sync.service     $out/lib/systemd/user/lok-sync.service
-            install -Dm644 dist/systemd/lok-sync.slice       $out/lib/systemd/user/lok-sync.slice
-            install -Dm644 dist/systemd/lok-sync-gui.service $out/lib/systemd/user/lok-sync-gui.service
-            install -Dm644 dist/desktop/lok-sync-gui.desktop $out/share/applications/lok-sync-gui.desktop
-          '';
-          meta = {
-            description = "Ultra-lightweight local phone <-> Linux sync daemon & GUI";
-            mainProgram = "lok-sync-gui";
-            platforms = [ "x86_64-linux" "aarch64-linux" ];
-          };
-        };
-
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
+          buildInputs = with pkgs; [
+            # Rust toolchain
             cargo
             rustc
-            clippy
             rustfmt
+            clippy
+            
+            # Node.js & npm for frontend UI build
             nodejs
+
+            # Tauri dependencies / GTK / WebKitGTK
+            webkitgtk_4_1
+            gtk3
+            glib
+            libsoup_3
             pkg-config
-            systemd
-            dbus
-            gtk3
-            webkitgtk_4_1
-            libsoup_3
-            openssl
-            wayland
-            libxkbcommon
-            libglvnd
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXrandr
-            xorg.libXi
-          ];
-          buildInputs = with pkgs; [
-            gtk3
-            webkitgtk_4_1
-            libsoup_3
             openssl
             dbus
+            udev
+            alsa-lib
+            vulkan-loader
           ];
-          nativeBuildInputs = with pkgs; [
-            pkg-config
-            nodejs
-          ];
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
-            gtk3
-            webkitgtk_4_1
-            libsoup_3
-            openssl
-            libglvnd
-            wayland
-            libxkbcommon
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXrandr
-            xorg.libXi
-          ]);
+
+          shellHook = ''
+            echo "✨ LokSync Nix Development Environment Loaded!"
+            echo "Node version: $(node -v)"
+            echo "npm version: $(npm -v)"
+          '';
         };
-      })) // {
-      nixosModules.default = import ./dist/nix/module.nix self;
-    };
+      }
+    );
 }
