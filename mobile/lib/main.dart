@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/sync_service.dart';
 import 'ui/theme.dart';
 import 'ui/screens/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const LokSyncApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => SyncService(),
+      child: const LokSyncApp(),
+    ),
+  );
 }
 
 class LokSyncApp extends StatefulWidget {

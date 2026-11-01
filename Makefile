@@ -1,7 +1,11 @@
 PREFIX ?= /usr/local
 DESTDIR ?=
 
-.PHONY: all frontend build release test clean install uninstall
+.PHONY: all frontend build release test clean install uninstall apk
+
+apk:
+	cd mobile && flutter pub get && flutter build apk --release
+
 
 all: release
 
