@@ -45,7 +45,7 @@ if [[ "${1:-}" == "--uninstall" ]]; then
     info "Uninstalling LokSync..."
     systemctl --user stop lok-sync.service 2>/dev/null || true
     systemctl --user disable lok-sync.service 2>/dev/null || true
-    rm -f "${BIN_DIR}/lok-sync-d" "${BIN_DIR}/lok-sync-gui"
+    rm -f "${BIN_DIR}/lok-sync-d" "${BIN_DIR}/lok-sync-gui" "${BIN_DIR}/lok-sync" "${BIN_DIR}/loksync"
     rm -f "${SYSTEMD_USER_DIR}/lok-sync.service" "${SYSTEMD_USER_DIR}/lok-sync.slice" "${SYSTEMD_USER_DIR}/lok-sync-gui.service"
     rm -f "${APPS_DIR}/lok-sync-gui.desktop"
     systemctl --user daemon-reload 2>/dev/null || true
@@ -94,7 +94,9 @@ mkdir -p "${CONFIG_DIR}"
 # Install executables
 install -m 755 "${SRC_DIR}/target/release/lok-sync-d" "${BIN_DIR}/lok-sync-d"
 install -m 755 "${SRC_DIR}/target/release/lok-sync-gui" "${BIN_DIR}/lok-sync-gui"
-ok "Installed executables to ${BIN_DIR}/"
+ln -sf "${BIN_DIR}/lok-sync-gui" "${BIN_DIR}/lok-sync"
+ln -sf "${BIN_DIR}/lok-sync-gui" "${BIN_DIR}/loksync"
+ok "Installed executables and CLI aliases (lok-sync, loksync) to ${BIN_DIR}/"
 
 # Install systemd user services
 install -m 644 "${SRC_DIR}/dist/systemd/lok-sync.service" "${SYSTEMD_USER_DIR}/lok-sync.service"
